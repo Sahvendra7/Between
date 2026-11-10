@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<h1>Confirm the amount</h1>
+<section class="card narrow">
+  {% if amount %}<p>We read <strong>${{ amount }}</strong>{% if merchant %} from {{ merchant }}{% endif %}. Is that what you paid?</p>
+  {% else %}<p>Enter the amount you paid.</p>{% endif %}
+  <form method="post" action="/f/{{ fid }}/expenses/confirm" class="stack">{{ csrf(s) }}
+    <input type="hidden" name="category" value="{{ category }}">
+    <input type="hidden" name="incurred_on" value="{{ incurred_on }}">
+    <input type="hidden" name="receipt_sha256" value="{{ receipt_sha256 }}">
+    <input type="hidden" name="emergency" value="{{ emergency }}">
+    <label>Amount paid (USD) <input name="amount" value="{{ amount }}" inputmode="decimal" required autofocus></label>
+    <p class="hint">{{ category_name(category) }} · paid on {{ incurred_on }}. Only the amount you confirm counts.</p>
+    <button class="primary">Submit expense</button>
+  </form>
+</section>
+{% endblock %}

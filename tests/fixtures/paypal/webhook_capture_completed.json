@@ -1,0 +1,89 @@
+{
+ "headers": {
+  "paypal-auth-algo": "SHA256withRSA",
+  "paypal-cert-url": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42-fca2a594-9eaebfdf",
+  "paypal-transmission-id": "de34abbf-dd4d-11f1-98c7-2f7ee39ffdc9",
+  "paypal-transmission-sig": "aIfTOUc50rrOJu7I2Q/CID6/dhC0xPa7rKhidKNJdizQtphzdCkhhp79VOAqqpX5uIZHVTMABIUITbt1noISF3lSHAVfdkUhbdRAh7gPEkKaFSjtbIE/hgSK+UHryIisRORWt2RB2TRLvkWypzAiIJus4Y9wWCKQtNwInap9G115aFnDW0q/ZcwIJmFF5e9bBW5y3RgRYOLBeQqSWyJjppKSMi+kwUIQAu0UyODxy9w7qN/qE92Y9y55e/MZJnPyRXOx2CCGA/dYHXUokK1X0xmmXFZCqNrr4H0RQ4HprDi8s091UANdz5wDmFbeXlXeqMWWcPFS8Un7g/B0y/vVQQ==",
+  "paypal-transmission-time": "2026-11-10T21:29:53Z"
+ },
+ "event": {
+  "id": "WH-9E209145X9914423A-9PY99206VP6414341",
+  "event_version": "1.0",
+  "create_time": "2026-11-10T21:29:42.094Z",
+  "resource_type": "capture",
+  "resource_version": "2.0",
+  "event_type": "PAYMENT.CAPTURE.COMPLETED",
+  "summary": "Payment completed for $ 1.0 USD",
+  "resource": {
+   "id": "4P106806PN291144K",
+   "amount": {
+    "currency_code": "USD",
+    "value": "1.00"
+   },
+   "final_capture": true,
+   "seller_protection": {
+    "status": "ELIGIBLE",
+    "dispute_categories": [
+     "ITEM_NOT_RECEIVED",
+     "UNAUTHORIZED_TRANSACTION"
+    ]
+   },
+   "seller_receivable_breakdown": {
+    "gross_amount": {
+     "currency_code": "USD",
+     "value": "1.00"
+    },
+    "paypal_fee": {
+     "currency_code": "USD",
+     "value": "0.52"
+    },
+    "net_amount": {
+     "currency_code": "USD",
+     "value": "0.48"
+    }
+   },
+   "custom_id": "expense-webhook-test",
+   "status": "COMPLETED",
+   "supplementary_data": {
+    "related_ids": {
+     "order_id": "4H051782NC692460A"
+    }
+   },
+   "payee": {
+    "email_address": "sb***@personal.example.com",
+    "merchant_id": "WCALVDWWF58CQ"
+   },
+   "create_time": "2026-11-10T21:29:38Z",
+   "update_time": "2026-11-10T21:29:38Z",
+   "links": [
+    {
+     "href": "https://api.sandbox.paypal.com/v2/payments/captures/4P106806PN291144K",
+     "rel": "self",
+     "method": "GET"
+    },
+    {
+     "href": "https://api.sandbox.paypal.com/v2/payments/captures/4P106806PN291144K/refund",
+     "rel": "refund",
+     "method": "POST"
+    },
+    {
+     "href": "https://api.sandbox.paypal.com/v2/checkout/orders/4H051782NC692460A",
+     "rel": "up",
+     "method": "GET"
+    }
+   ]
+  },
+  "links": [
+   {
+    "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-9E209145X9914423A-9PY99206VP6414341",
+    "rel": "self",
+    "method": "GET"
+   },
+   {
+    "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-9E209145X9914423A-9PY99206VP6414341/resend",
+    "rel": "resend",
+    "method": "POST"
+   }
+  ]
+ }
+}

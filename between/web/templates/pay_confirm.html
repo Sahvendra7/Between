@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<p class="muted"><a href="/f/{{ fid }}/expenses/{{ e.id }}">← Back to the expense</a></p>
+<h1>Pay {{ d.amount_minor|usd }} to {{ payee.display_name }}</h1>
+<section class="card decision">
+  <dl class="facts">
+    <dt>For</dt><dd>{{ category_name(e.category) }} · {{ e.amount_minor|usd }} paid by {{ names[e.paid_by] }} on {{ e.incurred_on }}</dd>
+    <dt>Your share</dt><dd>{{ d.amount_minor|usd }}{% if d.due_on %} · due {{ d.due_on }}{% endif %}</dd>
+    <dt>Goes to</dt><dd>{{ payee.display_name }} ({{ payee.label }}), their own PayPal account</dd>
+    <dt>Because</dt><dd>{% for c in cites %}{{ c.label }}{% if not loop.last %}; {% endif %}{% endfor %}</dd>
+  </dl>
+  <p class="hint">This is a PayPal sandbox checkout between personal accounts: an Orders API payment, not a Friends &amp; Family transfer.
+    PayPal will charge {{ payee.display_name }} about {{ fee|usd }} (estimate). The actual fee appears after payment, from PayPal.</p>
+  <form method="post" action="/f/{{ fid }}/expenses/{{ e.id }}/pay" class="stack mt">{{ csrf(s) }}
+    <input type="hidden" name="decision_hash" value="{{ decision_hash }}">
+    <label class="choice"><input type="checkbox" name="confirm" value="yes" required> I confirm I'm paying {{ d.amount_minor|usd }} to {{ payee.display_name }} for this expense</label>
+    <button class="primary">Continue to PayPal (sandbox)</button>
+  </form>
+</section>
+{% endblock %}

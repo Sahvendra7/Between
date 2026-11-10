@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block main %}
+<p class="muted"><a href="/f/{{ fid }}/expenses/{{ e.id }}">← Back to the expense</a></p>
+{% if payment %}
+  {% if paid %}
+  <h1>Verified with PayPal</h1>
+  <p class="pill good">Paid · verified with PayPal</p>
+  {% else %}
+  <h1>PayPal status: {{ payment.status }}</h1>
+  <p class="pill wait">Not counted as paid yet</p>
+  <p>Between only counts a payment once PayPal confirms it. {% if payment.last_error %}({{ payment.last_error }}){% endif %}</p>
+  {% endif %}
+  <section class="card">
+    <dl class="facts">
+      <dt>Paid</dt><dd>{{ payment.gross_minor|usd if payment.gross_minor is not none else "—" }}</dd>
+      <dt>PayPal fee (from PayPal)</dt><dd>{{ payment.fee_minor|usd if payment.fee_minor is not none else "—" }}</dd>
+      <dt>Received by the other parent</dt><dd>{{ payment.net_minor|usd if payment.net_minor is not none else "—" }}</dd>
+      <dt>PayPal capture</dt><dd class="mono">{{ payment.capture_id or "—" }}</dd>
+      <dt>Checked</dt><dd>{{ payment.last_verified_at.strftime('%Y-%m-%d %H:%M UTC') if payment.last_verified_at else "not yet" }}</dd>
+    </dl>
+    <p class="hint">PayPal sandbox. Anyone can re-check this payment against PayPal from the record page.</p>
+  </section>
+{% endif %}
+<p><a class="button" href="/f/{{ fid }}/record">Open the record</a></p>
+{% endblock %}

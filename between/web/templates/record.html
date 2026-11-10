@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<h1>Record</h1>
+{% if broken_at %}<p class="alert bad">Record changed at entry {{ broken_at }}: an entry was edited, removed or reordered after it was written.</p>
+{% else %}<p class="alert good">Record intact: {{ events|length }} entries, each chained to the one before.</p>{% endif %}
+
+<section class="card">
+  <h2>Payments, as PayPal reports them</h2>
+  {% if payments %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Payment</th><th>From → to</th><th>Status</th><th>Verified</th><th>Paid</th><th>Fee</th><th>Received</th></tr></thead>
+    <tbody>{% for p in payments %}
+    <tr><td class="mono">{{ p.capture_id or p.order_id or p.id }}</td><td>{{ names[p.payer_role] }} → {{ names[p.payee_role] }}</td>
+      <td>{{ p.status }}</td><td>{{ p.verification.replace('_', ' ') }}{% if p.last_verified_at %}<br><span class="cite">{{ p.last_verified_at.strftime('%Y-%m-%d %H:%M UTC') }}</span>{% endif %}</td>
+      <td>{{ p.gross_minor|usd if p.gross_minor is not none else "—" }}</td><td>{{ p.fee_minor|usd if p.fee_minor is not none else "—" }}</td>
+      <td>{{ p.net_minor|usd if p.net_minor is not none else "—" }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  <form method="post" action="/f/{{ fid }}/record/verify" class="mt">{{ csrf(s) }}<button class="primary">Check every payment with PayPal now</button></form>
+  {% else %}<p>No payments yet.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Everything that happened</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>When</th><th>Who</th><th>What</th><th>Chain</th></tr></thead>
+    <tbody>{% for e in events %}
+    <tr><td>{{ e.seq }}</td><td class="cite">{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ e.who }}</td>
+      <td><span class="mono">{{ e.type }}</span>{% if e.body.to %} → {{ e.body.to }}{% endif %}{% if e.body.status %} · {{ e.body.status }}{% endif %}</td>
+      <td class="mono">{{ e.hash[:12] }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  <p class="mt"><a class="button" href="/f/{{ fid }}/record/export">Export for printing</a></p>
+</section>
+{% endblock %}

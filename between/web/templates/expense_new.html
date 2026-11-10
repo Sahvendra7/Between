@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<h1>New expense</h1>
+<section class="card">
+  <form method="post" action="/f/{{ fid }}/expenses/new" enctype="multipart/form-data" class="stack">{{ csrf(s) }}
+    <label>What was it for?
+      <select name="category" required>
+        <option value="">Choose…</option>
+        {% for c in categories %}<option value="{{ c }}">{{ category_name(c) }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Date you paid <input type="date" name="incurred_on" value="{{ today }}" max="{{ today }}"></label>
+    <label>Receipt (PNG, JPEG or PDF, up to 2 MB) <input type="file" name="receipt" accept="image/png,image/jpeg,application/pdf"></label>
+    {% if emergency_allowed %}<label class="choice"><input type="checkbox" name="emergency"> This was an emergency</label>{% endif %}
+    <p class="hint">The AI reads the total from the receipt; you confirm the amount on the next step. The receipt itself isn't kept.</p>
+    <button class="primary">Continue</button>
+  </form>
+</section>
+<section class="card">
+  <h2>Ask to agree in advance</h2>
+  <p class="hint">Some agreements need the other parent's written agreement before you spend over a limit.</p>
+  <form method="post" action="/f/{{ fid }}/consents" class="stack">{{ csrf(s) }}
+    <label>For <select name="category" required>{% for c in categories %}<option value="{{ c }}">{{ category_name(c) }}</option>{% endfor %}</select></label>
+    <label>Up to (USD) <input name="max" inputmode="decimal" required placeholder="300.00"></label>
+    <label>Note for the other parent <input name="note" maxlength="500" placeholder="Summer soccer camp"></label>
+    <button>Send request</button>
+  </form>
+</section>
+{% endblock %}

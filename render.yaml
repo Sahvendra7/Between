@@ -1,0 +1,42 @@
+# Render Blueprint: one web service + Render Postgres (spec r2 §11).
+# Free Postgres expires 30 days after creation (render.com/docs/free): see README "Hosting" before judging ends.
+services:
+  - type: web
+    name: between
+    runtime: python
+    plan: free
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run uvicorn between.web.app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: between-db
+          property: connectionString
+      - key: BETWEEN_DEMO_MODE
+        value: "1"
+      - key: BETWEEN_SECURE_COOKIES
+        value: "1"
+      - key: BETWEEN_SECRET
+        generateValue: true
+      - key: BETWEEN_BASE_URL
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DEMO_PARENT_A_EMAIL
+        sync: false
+      - key: DEMO_PARENT_B_EMAIL
+        sync: false
+
+databases:
+  - name: between-db
+    plan: free
+    databaseName: between

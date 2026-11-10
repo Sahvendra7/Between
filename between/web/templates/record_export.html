@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Between record {{ fid }}</title><link rel="stylesheet" href="/static/between.css"></head>
+<body><main class="page">
+<h1>Between record</h1>
+<p><strong>Not legal advice. Sandbox demonstration.</strong> Synthetic data; PayPal sandbox only. Approving rules in Between doesn't change any legal agreement.</p>
+<p class="cite">Family {{ fid }} · {{ names["A"] }} and {{ names["B"] }} · generated {{ generated.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+<p>{% if broken_at %}Chain check: changed at entry {{ broken_at }}.{% else %}Chain check: intact ({{ events|length }} entries).{% endif %}</p>
+<h2>Payments</h2>
+<table><thead><tr><th>PayPal capture</th><th>From → to</th><th>Status</th><th>Verified</th><th>Paid</th><th>Fee</th><th>Received</th></tr></thead><tbody>
+{% for p in payments %}<tr><td class="mono">{{ p.capture_id or "—" }}</td><td>{{ names[p.payer_role] }} → {{ names[p.payee_role] }}</td><td>{{ p.status }}</td>
+<td>{{ p.verification }}{% if p.last_verified_at %} {{ p.last_verified_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %}</td>
+<td>{{ p.gross_minor|usd if p.gross_minor is not none else "—" }}</td><td>{{ p.fee_minor|usd if p.fee_minor is not none else "—" }}</td><td>{{ p.net_minor|usd if p.net_minor is not none else "—" }}</td></tr>{% endfor %}
+</tbody></table>
+<h2>Entries</h2>
+<table><thead><tr><th>#</th><th>When (UTC)</th><th>Who</th><th>What</th><th>Hash</th></tr></thead><tbody>
+{% for e in events %}<tr><td>{{ e.seq }}</td><td>{{ e.at.strftime('%Y-%m-%d %H:%M:%S') }}</td><td>{{ e.who }}</td><td class="mono">{{ e.type }}</td><td class="mono">{{ e.hash }}</td></tr>{% endfor %}
+</tbody></table>
+<p class="hint">Each entry's hash covers the entry and the hash before it. Each payment can be re-read from PayPal by its capture id.</p>
+</main></body></html>

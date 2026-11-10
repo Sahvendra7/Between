@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="card narrow">
+  <h1>Join as {{ labels.get(role, "the other parent") }}</h1>
+  <p>{{ labels.get("A" if role == "B" else "B") }} started a Between family for your child's shared expenses. This link works once.</p>
+  <form method="post" action="/join/{{ token }}" class="stack">
+    <label>Your first name <input name="display_name" required maxlength="60"></label>
+    <label>PayPal account for money owed to you <input name="paypal_email" type="email" required placeholder="sb-…@personal.example.com"></label>
+    <button class="primary">Join</button>
+  </form>
+</section>
+{% endblock %}

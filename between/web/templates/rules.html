@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<h1>Your rules <span class="muted">version {{ rs.version }}</span></h1>
+
+<section class="card approvals">
+  {% for role in ["A", "B"] %}
+    <p>{{ labels[role] }}: {% if approvals.get(role) %}<span class="pill good">approved</span>{% else %}<span class="pill wait">not approved yet</span>{% endif %}</p>
+  {% endfor %}
+  {% if not approvals.get(s.role) %}
+  <form method="post" action="/f/{{ fid }}/rules/{{ rs.id }}/approve">{{ csrf(s) }}
+    <input type="hidden" name="hash_seen" value="{{ rs.hash }}">
+    <button class="primary">I approve these {{ rs.rules|length }} rules</button>
+  </form>
+  <p class="hint">You're approving this exact version. Any change creates a new version you'll both approve again.</p>
+  {% endif %}
+</section>
+
+{% if questions %}
+<section>
+  <h2>Questions for both of you</h2>
+  <p class="hint">Each of you answers privately. You'll both see the answers once you've both answered. Until you agree, expenses these questions affect go to both of you.</p>
+  {% for item in questions %}{% set q = item.q %}
+  <article class="question card">
+    <p class="q">{{ q.question }}</p>
+    <p class="cite">Page {{ q.source.page }} · {{ q.source.section }}</p>
+    {% if item.resolved_by %}
+      <p class="pill good">Settled: Resolution {{ item.resolved_by }}</p>
+    {% elif item.answers.both_answered %}
+      <p>You chose: {{ (item.options|selectattr("choice", "equalto", item.answers.mine.choice)|first).label }}{% if item.answers.mine.value %} ({{ item.answers.mine.value }} days){% endif %}</p>
+      <p data-other-choice>{{ labels[other] }} chose: {{ (item.options|selectattr("choice", "equalto", item.answers.other.choice)|first).label }}{% if item.answers.other.value %} ({{ item.answers.other.value }} days){% endif %}</p>
+      <p class="pill wait">You chose differently, so expenses this affects go to both of you.</p>
+    {% else %}
+      <form method="post" action="/f/{{ fid }}/questions/{{ q.id }}/answer" class="stack">{{ csrf(s) }}
+        <input type="hidden" name="question_id" value="{{ q.id }}"><input type="hidden" name="ruleset_id" value="{{ rs.id }}">
+        {% for o in item.options %}
+          <label class="choice"><input type="radio" name="choice" value="{{ o.choice }}" required
+            {% if item.answers.mine and item.answers.mine.choice == o.choice %}checked{% endif %}> {{ o.label }}</label>
+          {% if o.needs_value %}<label class="indent">Days <input name="value" inputmode="numeric" pattern="[0-9]*" size="4"></label>{% endif %}
+        {% endfor %}
+        <button>{% if item.answers.mine %}Change my answer{% else %}Save my answer{% endif %}</button>
+      </form>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if resolutions %}
+<section>
+  <h2>Working arrangements</h2>
+  {% for r in resolutions %}
+  <article class="rule resolution">
+    <p class="what">{{ describe(r, labels) }}</p>
+    <p class="cite">Resolution {{ r.id }} · answers question {{ r.source.question_id }}</p>
+    <p class="note">Your working arrangement in Between. It does not change your legal agreement.</p>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section>
+  <h2>From your agreement</h2>
+  {% for r in agreement_rules %}
+  <article class="rule agreement">
+    <p class="what">{{ describe(r, labels) }}</p>
+    <blockquote>{{ r.source.quote }}</blockquote>
+    <p class="cite">Page {{ r.source.page }} · {{ r.source.section }}</p>
+  </article>
+  {% endfor %}
+  {% if rs.refused %}<p class="hint">{{ rs.refused|length }} proposal{{ "s" if rs.refused|length != 1 }} from the AI couldn't be matched word for word to your agreement, so {{ "they were" if rs.refused|length != 1 else "it was" }} set aside.</p>{% endif %}
+</section>
+{% endblock %}

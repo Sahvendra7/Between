@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="hero">
+  <h1>Share child expenses without arguing about what the agreement says.</h1>
+  <p class="lede">An AI reads your co-parenting agreement once and proposes rules, each quoting its clause. You both approve them. From then on, plain code checks every expense and cites the clause, and the parent who owes pays the other through a PayPal sandbox checkout.</p>
+</section>
+<section class="card">
+  <h2>Start your family</h2>
+  <form method="post" action="/families" class="stack">
+    <label>How your agreement names you <input name="role_label" required maxlength="40" placeholder="Mother"></label>
+    <label>How it names the other parent <input name="other_label" required maxlength="40" placeholder="Father"></label>
+    <label>Your first name <input name="display_name" required maxlength="60" placeholder="Maria"></label>
+    <label>PayPal account for money owed to you <input name="paypal_email" type="email" required placeholder="sb-…@personal.example.com"></label>
+    {% if settings.demo_mode %}<p class="hint">Demo: use a PayPal sandbox personal account. You'll get a one-time link for the other parent.</p>{% endif %}
+    <button class="primary">Create our family</button>
+  </form>
+  {% if settings.demo_mode %}
+  <hr class="sep">
+  <form method="post" action="/demo/new"><button>Try a demo family with a sample agreement</button></form>
+  <p class="hint">Creates your own synthetic family. You can switch between the two parents to try both sides.</p>
+  {% endif %}
+</section>
+{% endblock %}

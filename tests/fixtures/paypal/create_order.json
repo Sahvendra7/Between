@@ -1,0 +1,37 @@
+{
+ "id": "5H058147FB671984G",
+ "intent": "CAPTURE",
+ "status": "PAYER_ACTION_REQUIRED",
+ "payment_source": {
+  "paypal": {}
+ },
+ "purchase_units": [
+  {
+   "reference_id": "exp_e1",
+   "amount": {
+    "currency_code": "USD",
+    "value": "252.00"
+   },
+   "payee": {
+    "email_address": "sb***@personal.example.com",
+    "display_data": {
+     "brand_name": "Between (sandbox)"
+    }
+   },
+   "description": "Between spike: synthetic child expense share",
+   "custom_id": "exp_e1"
+  }
+ ],
+ "links": [
+  {
+   "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5H058147FB671984G",
+   "rel": "self",
+   "method": "GET"
+  },
+  {
+   "href": "https://www.sandbox.paypal.com/checkoutnow?token=5H058147FB671984G",
+   "rel": "payer-action",
+   "method": "GET"
+  }
+ ]
+}

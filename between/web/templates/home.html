@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<div data-family="{{ fid }}"></div>
+<h1>{{ parents["A"].display_name }} &amp; {{ parents["B"].label if parents["B"].display_name == "(invited)" else parents["B"].display_name }}</h1>
+
+{% if demo_family %}
+<section class="card accent">
+  <p><strong>You're viewing as {{ parents[s.role].label }}</strong> ({{ parents[s.role].display_name }}). Demo shortcut: switch to see the other parent's side.</p>
+  <form method="post" action="/demo/switch/{{ fid }}">{{ csrf(s) }}<button>Switch to {{ parents["B" if s.role == "A" else "A"].label }}</button></form>
+</section>
+{% endif %}
+{% if invite_url %}
+<section class="card accent">
+  <h2>Invite {{ parents["B" if s.role == "A" else "A"].label }}</h2>
+  <p>Send this link privately. It opens once and expires in 72 hours.</p>
+  <input class="copy" readonly value="{{ invite_url }}" aria-label="Invite link">
+</section>
+{% elif not other_joined and not demo_family %}
+<section class="card">
+  <p>{{ parents["B" if s.role == "A" else "A"].label }} hasn't joined yet.</p>
+  <form method="post" action="/f/{{ fid }}/invite/rotate">{{ csrf(s) }}<button>Make a new invite link</button></form>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Rules</h2>
+  {% if not rs %}
+    <p>No agreement yet. <a class="button primary" href="/f/{{ fid }}/agreement">Add your agreement</a></p>
+  {% else %}
+    {% if approvals|length == 2 %}<p class="pill good">Approved by both of you · version {{ rs.version }}</p>
+    {% else %}<p class="pill wait">Waiting for approval · version {{ rs.version }}</p>{% endif %}
+    {% if open_questions %}<p>{{ open_questions|length }} open question{{ "s" if open_questions|length != 1 }}: expenses they affect go to both of you.</p>{% endif %}
+    <p><a href="/f/{{ fid }}/rules">Review the rules</a></p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Expenses</h2>
+  {% if expenses %}
+  <ul class="list">
+    {% for e in expenses %}
+    <li><a href="/f/{{ fid }}/expenses/{{ e.id }}"><span>{{ category_name(e.category) }} · {{ e.amount_minor|usd }} · paid by {{ parents[e.paid_by].label }}</span>
+      <span class="pill {{ e.tone }}">{{ e.label }}</span></a></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p>No expenses yet.</p>{% endif %}
+  {% if rs %}<p><a class="button" href="/f/{{ fid }}/expenses/new">Add an expense</a></p>{% endif %}
+</section>
+{% if consents %}
+<section class="card">
+  <h2>Agreements in advance</h2>
+  <ul class="list">{% for c in consents %}<li>{{ c.text }}{% if c.can_agree %}
+    <form method="post" action="/f/{{ fid }}/consents/{{ c.id }}/agree" class="inline">{{ csrf(s) }}<button class="primary">Agree</button></form>{% endif %}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

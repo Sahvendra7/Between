@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<p class="muted"><a href="/f/{{ fid }}">← Home</a></p>
+<h1>{{ category_name(e.category) }} · {{ e.amount_minor|usd }}</h1>
+<p class="muted">Paid by {{ names[e.paid_by] }} on {{ e.incurred_on }} · requested {{ e.requested_on }}{% if e.receipt_sha256 %} · receipt on file (hash only){% endif %}</p>
+
+<section class="card decision">
+  {% if e.status == "reopened" %}
+    <p class="pill wait">Reopened</p>
+    <p>PayPal now shows this payment as refunded or reversed, so it no longer counts as paid.</p>
+  {% elif paid %}
+    <p class="pill good">Paid · verified with PayPal</p>
+  {% else %}
+    <p class="pill {{ 'bad' if d.status == 'rejected' else 'wait' }}">{{ status_words.get(d.status, d.status) }}</p>
+  {% endif %}
+
+  {% if d.status == "payable" %}
+    <p class="amount">{{ d.amount_minor|usd }}</p>
+    <p><strong>{{ names[d.owed_by] }} owes {{ names[d.owed_to] }}</strong>{% if d.due_on %} · due {{ d.due_on }}{% endif %}</p>
+    {% for n in d.notes or [] %}
+      {% if n.capped_from %}<p class="hint">Capped by the annual limit (would have been {{ n.capped_from|usd }}).</p>{% endif %}
+      {% if n.emergency %}<p class="hint">Emergency: tell the other parent within {{ n.notify_within_hours }} hours.</p>{% endif %}
+      {% if n.unchecked %}<p class="hint">One deadline in your agreement has no number, so it wasn't checked.</p>{% endif %}
+    {% endfor %}
+  {% else %}
+    <p>{{ reason_words.get(d.reason, "") }}</p>
+    {% if d.question %}<p class="hint">{{ d.question }} <a href="/f/{{ fid }}/rules">Answer it on the rules page.</a></p>{% endif %}
+  {% endif %}
+
+  {% if cites %}
+  <h2>Why</h2>
+  {% for c in cites %}
+    <div class="rule {{ 'resolution' if c.label.startswith('Resolution') else 'cited' }}">
+      <p class="what">{{ c.what }}</p>
+      {% if c.quote %}<blockquote>{{ c.quote }}</blockquote>{% endif %}
+      <p class="cite">{{ c.label }}</p>
+      {% if c.label.startswith('Resolution') %}<p class="note">Your working arrangement in Between. It does not change your legal agreement.</p>{% endif %}
+    </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if payment %}
+  <h2>Payment</h2>
+  <dl class="facts">
+    <dt>PayPal status</dt><dd>{{ payment.status }}</dd>
+    <dt>Verification</dt><dd>{{ payment.verification.replace('_', ' ') }}{% if payment.last_verified_at %} · {{ payment.last_verified_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %}</dd>
+    {% if payment.gross_minor is not none %}
+    <dt>Paid</dt><dd>{{ payment.gross_minor|usd }}</dd>
+    <dt>PayPal fee (from PayPal)</dt><dd>{{ payment.fee_minor|usd if payment.fee_minor is not none else "—" }}</dd>
+    <dt>Received</dt><dd>{{ payment.net_minor|usd if payment.net_minor is not none else "—" }}</dd>
+    {% endif %}
+  </dl>
+  {% endif %}
+
+  <div class="row mt">
+  {% if can_pay %}<a class="button primary" href="/f/{{ fid }}/expenses/{{ e.id }}/pay">Pay {{ d.amount_minor|usd }} with PayPal</a>{% endif %}
+  {% if can_redecide %}<form method="post" action="/f/{{ fid }}/expenses/{{ e.id }}/redecide" class="inline">{{ csrf(s) }}<button>Check again</button></form>{% endif %}
+  </div>
+</section>
+{% endblock %}

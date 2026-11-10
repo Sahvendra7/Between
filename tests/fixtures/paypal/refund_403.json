@@ -1,0 +1,20 @@
+{
+ "name": "NOT_AUTHORIZED",
+ "message": "Authorization failed due to insufficient permissions.",
+ "debug_id": "ca58812d4ac55",
+ "details": [
+  {
+   "issue": "PERMISSION_DENIED",
+   "field": "capture_id",
+   "value": "38L069926Y258024J",
+   "description": "You do not have permission to access or perform operations on this resource.",
+   "location": "path"
+  }
+ ],
+ "links": [
+  {
+   "href": "https://developer.paypal.com/docs/api/payments/v2/#error-PERMISSION_DENIED",
+   "rel": "information_link"
+  }
+ ]
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Between{% endblock %}</title>
+<link rel="stylesheet" href="/static/between.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+{% if settings.demo_mode %}<div class="banner" role="note">Sandbox demonstration with synthetic data. PayPal sandbox only; no real money moves. Not legal advice.</div>{% endif %}
+<header class="top">
+  <a class="brand" href="{% if fid %}/f/{{ fid }}{% else %}/{% endif %}"><span class="mark" aria-hidden="true"></span>Between</a>
+  {% if fid %}<nav aria-label="Family">
+    <a href="/f/{{ fid }}">Home</a><a href="/f/{{ fid }}/rules">Rules</a><a href="/f/{{ fid }}/expenses/new">New expense</a><a href="/f/{{ fid }}/record">Record</a>
+  </nav>{% endif %}
+</header>
+<main class="page">
+{% if error %}<p class="alert bad" role="alert">{{ error }}</p>{% endif %}
+{% block main %}{% endblock %}
+</main>
+<footer class="foot">Between coordinates shared child expenses. It doesn't give legal advice, and approving rules here doesn't change your legal agreement.</footer>
+</body>
+</html>
+{% macro csrf(s) %}<input type="hidden" name="csrf" value="{{ s.csrf }}">{% endmacro %}

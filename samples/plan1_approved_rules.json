@@ -1,0 +1,153 @@
+{
+ "parties": {
+  "A": "Mother",
+  "B": "Father"
+ },
+ "rules": [
+  {
+   "id": "p1-med",
+   "kind": "split",
+   "category": "medical",
+   "params": {
+    "shares": {
+     "A": 40,
+     "B": 60
+    }
+   },
+   "source": {
+    "quote": "shall be paid 60% by the Father and 40% by the Mother",
+    "page": 2,
+    "section": "6.1"
+   }
+  },
+  {
+   "id": "p1-ext",
+   "kind": "split",
+   "category": "extracurricular",
+   "params": {
+    "shares": {
+     "A": 50,
+     "B": 50
+    }
+   },
+   "source": {
+    "quote": "The parents shall share the cost of extracurricular activities equally, 50% each.",
+    "page": 2,
+    "section": "6.2"
+   }
+  },
+  {
+   "id": "p1-ext-consent",
+   "kind": "consent_required",
+   "category": "extracurricular",
+   "params": {
+    "over_minor": 20000
+   },
+   "source": {
+    "quote": "Neither parent shall enrol the Child in an activity costing more than $200 without the prior written consent of the other parent.",
+    "page": 2,
+    "section": "6.2"
+   }
+  },
+  {
+   "id": "p1-ext-cap",
+   "kind": "annual_cap",
+   "category": "extracurricular",
+   "params": {
+    "per_parent_minor": 150000
+   },
+   "source": {
+    "quote": "Neither parent shall be required to contribute more than $1,500 per calendar year toward extracurricular activities.",
+    "page": 2,
+    "section": "6.3"
+   }
+  },
+  {
+   "id": "p1-edu",
+   "kind": "split",
+   "category": "education",
+   "params": {
+    "shares": {
+     "A": 50,
+     "B": 50
+    }
+   },
+   "source": {
+    "quote": "Tutoring, school trips and school fees shall be shared equally, 50% each.",
+    "page": 2,
+    "section": "6.4"
+   }
+  },
+  {
+   "id": "p1-receipt",
+   "kind": "receipt_required",
+   "category": "*",
+   "params": {},
+   "source": {
+    "quote": "with a copy of the receipt",
+    "page": 3,
+    "section": "7.1"
+   }
+  },
+  {
+   "id": "p1-req",
+   "kind": "request_deadline_days",
+   "category": "*",
+   "params": {
+    "days": 30
+   },
+   "source": {
+    "quote": "within 30 days of paying the expense",
+    "page": 3,
+    "section": "7.1"
+   }
+  },
+  {
+   "id": "p1-pay",
+   "kind": "payment_deadline_days",
+   "category": "*",
+   "params": {
+    "days": 14
+   },
+   "source": {
+    "quote": "The other parent shall pay their share within 14 days of receiving a complete request.",
+    "page": 3,
+    "section": "7.2"
+   }
+  },
+  {
+   "id": "p1-clothing",
+   "kind": "not_shared",
+   "category": "clothing",
+   "params": {},
+   "source": {
+    "quote": "Clothing, gifts and everyday food are not shared expenses",
+    "page": 3,
+    "section": "7.3"
+   }
+  },
+  {
+   "id": "p1-gifts",
+   "kind": "not_shared",
+   "category": "gifts",
+   "params": {},
+   "source": {
+    "quote": "Clothing, gifts and everyday food are not shared expenses",
+    "page": 3,
+    "section": "7.3"
+   }
+  },
+  {
+   "id": "p1-food",
+   "kind": "not_shared",
+   "category": "food",
+   "params": {},
+   "source": {
+    "quote": "Clothing, gifts and everyday food are not shared expenses",
+    "page": 3,
+    "section": "7.3"
+   }
+  }
+ ],
+ "ambiguities": []
+}
