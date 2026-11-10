@@ -62,4 +62,7 @@ async def upload_agreement(request: Request, fid: str, conn=Depends(get_conn)):
     conn.execute(sa.insert(db.agreement).values(id=aid, family_id=fid, sha256=hashlib.sha256(text.encode()).hexdigest(),
                                                 text=text, uploaded_by=s.role, uploaded_at=t))
     RS.create_version(conn, fid, aid, validated, names, actor(s), now=t)
+    from between.schedule import extract_schedule  # P1: best effort; no schedule simply means no custody blocks
+    from between.web.routes_calendar import store_schedule
+    store_schedule(conn, fid, aid, extract_schedule(text, client=request.app.state.ai))
     return RedirectResponse(f"/f/{fid}/rules", status_code=303)

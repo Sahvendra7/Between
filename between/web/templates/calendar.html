@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/fontawesome/css/fontawesome.min.css">
+<link rel="stylesheet" href="/static/vendor/fontawesome/css/solid.min.css">
+<link rel="stylesheet" href="/static/vendor/bryntum/calendar.css">
+<link rel="stylesheet" href="/static/vendor/bryntum/svalbard-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="/static/vendor/bryntum/svalbard-dark.css" media="(prefers-color-scheme: dark)">
+{% endblock %}
+{% block main %}
+<h1>Calendar</h1>
+{% if not sched %}
+  <p class="card">Your agreement has no regular week-on, week-off pattern Between could read, so only expenses are shown.</p>
+{% else %}
+  <section class="card">
+    <p class="what">{{ names["A"] }} and {{ names["B"] }} alternate weeks, changing over on {{ ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][sched.changeover_weekday] }}s at {{ sched.changeover_time }}.</p>
+    <blockquote class="quote">{{ sched.source.quote }}</blockquote>
+    <p class="cite">Page {{ sched.source.page }} · {{ sched.source.section }}</p>
+    <form method="post" action="/f/{{ fid }}/calendar/anchor" class="row mt">{{ csrf(s) }}
+      <span>This week the child is with</span>
+      <button name="parent" value="A">{{ names["A"] }}</button><button name="parent" value="B">{{ names["B"] }}</button>
+    </form>
+    <p class="hint">{% if sched.anchor_date %}Set {% if sched.set_by %}by {{ names.get(sched.set_by, "the demo") }}{% else %}for the demo{% endif %}: week starting {{ sched.anchor_date }} with {{ names[sched.first_parent] }}.{% else %}The agreement doesn't say who has which week, so tell Between once.{% endif %}</p>
+  </section>
+{% endif %}
+<div id="cal" class="calendar" data-src="/f/{{ fid }}/calendar.json" aria-label="Parenting time and expenses calendar"></div>
+<p class="hint">Read-only. Calendar by Bryntum Calendar Community (MIT).</p>
+<script type="module" src="/static/calendar.js"></script>
+{% endblock %}

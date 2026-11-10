@@ -6,13 +6,14 @@
 <title>{% block title %}Between{% endblock %}</title>
 <link rel="stylesheet" href="/static/between.css">
 <link rel="icon" href="data:,">
+{% block head %}{% endblock %}
 </head>
 <body>
 {% if settings.demo_mode %}<div class="banner" role="note">Sandbox demonstration with synthetic data. PayPal sandbox only; no real money moves. Not legal advice.</div>{% endif %}
 <header class="top">
   <a class="brand" href="{% if fid %}/f/{{ fid }}{% else %}/{% endif %}"><span class="mark" aria-hidden="true"></span>Between</a>
   {% if fid %}<nav aria-label="Family">
-    <a href="/f/{{ fid }}">Home</a><a href="/f/{{ fid }}/rules">Rules</a><a href="/f/{{ fid }}/expenses/new">New expense</a><a href="/f/{{ fid }}/record">Record</a>
+    <a href="/f/{{ fid }}">Home</a><a href="/f/{{ fid }}/rules">Rules</a><a href="/f/{{ fid }}/calendar">Calendar</a><a href="/f/{{ fid }}/expenses/new">New expense</a><a href="/f/{{ fid }}/record">Record</a>
   </nav>{% endif %}
 </header>
 <main class="page">

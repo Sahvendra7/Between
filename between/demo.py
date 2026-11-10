@@ -89,6 +89,10 @@ def _make_family(conn, settings, now, demo_key, approve: bool) -> str:
     conn.execute(sa.insert(db.agreement).values(id=aid, family_id=fid, sha256=hashlib.sha256(text.encode()).hexdigest(),
                                                 text=text, uploaded_by="A", uploaded_at=now))
     v = RS.create_version(conn, fid, aid, validated, parties, SEED_ACTOR, now=now)
+    from between.schedule import last_changeover
+    from between.web.routes_calendar import store_schedule
+    sched = json.loads((SAMPLES / "plan1_schedule.json").read_text())
+    store_schedule(conn, fid, aid, sched, anchor=last_changeover(sched, now.replace(tzinfo=None)).isoformat(), first_parent="A")
     if approve:
         for role in ("A", "B"):
             RS.approve(conn, v["id"], role, v["hash"], SEED_ACTOR, now=now)

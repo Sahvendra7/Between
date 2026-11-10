@@ -23,7 +23,7 @@ def fake_ai(key, receipt_total=42000):
     parsed = Extraction.model_validate(raw)
     from between.extraction import ReceiptGuess
     guess = ReceiptGuess(merchant="Bright Smiles Orthodontics", date="2026-10-01", total_minor=receipt_total)
-    rules = lambda **kw: SimpleNamespace(stop_reason="end_turn", parsed_output=parsed)
+    rules = lambda **kw: SimpleNamespace(stop_reason="end_turn", parsed_output=parsed if kw["output_format"] is Extraction else None)
     receipt = lambda **kw: SimpleNamespace(stop_reason="end_turn", parsed_output=guess)
     return SimpleNamespace(messages=SimpleNamespace(parse=receipt), beta=SimpleNamespace(messages=SimpleNamespace(parse=rules)))
 

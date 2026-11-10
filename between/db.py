@@ -147,6 +147,17 @@ _LIVE = sa.text("status NOT IN ('failed','declined','cancelled')")
 Index("ix_payment_live", payment.c.expense_id, payment.c.kind, unique=True,
       sqlite_where=_LIVE, postgresql_where=_LIVE)
 
+schedule = Table(
+    "schedule", metadata,
+    Column("family_id", String, sa.ForeignKey("family.id"), primary_key=True),
+    Column("agreement_id", String, sa.ForeignKey("agreement.id"), nullable=False),
+    Column("json", Text, nullable=False),
+    Column("anchor_date", String),
+    Column("first_parent", String),
+    Column("set_by", String),
+    Column("at", TS, nullable=False),
+)
+
 webhook_event = Table(
     "webhook_event", metadata,
     Column("id", String, primary_key=True),

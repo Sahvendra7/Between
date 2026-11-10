@@ -1,0 +1,176 @@
+@charset "UTF-8";
+
+/* Themes need more specific rules than Widgets etc. to make sure the values are applied no matter the import order */
+:root:not(.b-nothing), :host(:not(.b-nothing)) {
+    --b-primary                              : var(--b-color-blue);
+    --b-secondary                            : var(--b-color-orange);
+
+    --b-elevation-1                          : 0 1px 3px 0 rgb(0 0 0 /0.22), 0 1px 1px 0 rgb(0 0 0 /0.20), 0 2px 1px -1px rgb(0 0 0 /0.18);
+    --b-elevation-2                          : 0 1px 5px 0 rgb(0 0 0 /0.22), 0 2px 2px 0 rgb(0 0 0 /0.20), 0 3px 1px -2px rgb(0 0 0 /0.18);
+
+    /* region Neutral shades */
+    --b-neutral-100                          : hsl(0 0% 10%);
+    --b-neutral-99                           : hsl(0 0% 10.9%);
+    --b-neutral-98                           : hsl(0 0% 11.8%);
+    --b-neutral-97                           : hsl(0 0% 12.7%);
+    --b-neutral-96                           : hsl(0 0% 13.6%);
+    --b-neutral-95                           : hsl(0 0% 14.5%);
+    --b-neutral-94                           : hsl(0 0% 15.4%);
+    --b-neutral-93                           : hsl(0 0% 16.3%);
+    --b-neutral-92                           : hsl(0 0% 17.2%);
+    --b-neutral-91                           : hsl(0 0% 18.1%);
+    --b-neutral-90                           : hsl(0 0% 19%);
+    --b-neutral-85                           : hsl(0 0% 23.5%);
+    --b-neutral-80                           : hsl(0 0% 28%);
+    --b-neutral-75                           : hsl(0 0% 32.5%);
+    --b-neutral-70                           : hsl(0 0% 37%);
+    --b-neutral-65                           : hsl(0 0% 41.5%);
+    --b-neutral-60                           : hsl(0 0% 46%);
+    --b-neutral-55                           : hsl(0 0% 50.5%);
+    --b-neutral-50                           : hsl(0 0% 55%);
+    --b-neutral-45                           : hsl(0 0% 59.5%);
+    --b-neutral-40                           : hsl(0 0% 64%);
+    --b-neutral-35                           : hsl(0 0% 68.5%);
+    --b-neutral-30                           : hsl(0 0% 73%);
+    --b-neutral-25                           : hsl(0 0% 77.5%);
+    --b-neutral-20                           : hsl(0 0% 82%);
+    --b-neutral-15                           : hsl(0 0% 86.5%);
+    --b-neutral-10                           : hsl(0 0% 91%);
+    --b-neutral-5                            : hsl(0 0% 95.5%);
+    --b-neutral-2                            : hsl(0 0% 97.3%);
+    --b-neutral-1                            : hsl(0 0% 98.2%);
+    --b-neutral-0                            : hsl(0 0% 100%);
+    /* endregion */
+
+    --b-mix                                  : hsl(0 0% 12%);
+    --b-opposite                             : #fff;
+
+    /* region Core */
+    --b-widget-color-scheme                  : dark;
+    --b-widget-border-radius                 : .6em;
+    --b-widget-border-radius-large           : 1.2em;
+    --b-widget-border-color                  : var(--b-neutral-60);
+
+    --b-field-set-border-color               : var(--b-neutral-80);
+
+    --b-panel-with-header-padding            : 0 var(--b-widget-padding-large) var(--b-widget-padding-large) var(--b-widget-padding-large);
+
+    --b-popup-background                     : var(--b-neutral-97);
+    --b-popup-padding                        : var(--b-widget-padding);
+
+    --b-tooltip-rich-background              : var(--b-neutral-96);
+    --b-tooltip-plain-background             : var(--b-neutral-96);
+
+    --b-slide-toggle-border-color            : transparent;
+    --b-slide-toggle-disabled-border-color   : transparent;
+    --b-slide-toggle-height                  : 1.5em;
+    --b-slide-toggle-width                   : 2.25em;
+
+    --b-splitter-color                       : var(--b-neutral-80);
+    --b-splitter-size                        : 1px;
+    --b-splitter-hover-size                  : 5px;
+    --b-splitter-hover-color                 : var(--b-neutral-90);
+
+    --b-text-field-outlined-input-padding    : .9em;
+    --b-text-field-outlined-border-color     : var(--b-border-6);
+    --b-field-trigger-edge-gap               : .9em;
+
+    /* endregion */
+
+    /* Grid */
+    --b-grid-header-font-weight              : 600;
+    --b-grid-header-color                    : var(--b-neutral-25);
+
+    /* Scheduler */
+    --b-column-lines-tick-color              : var(--b-neutral-93);
+
+    /* Gantt */
+    --b-scroll-button-border-width           : 1px;
+
+    /* TaskBoard */
+    --b-task-board-column-header-font-weight : 600;
+
+    /* Heat map values ranging from lowest to highest intensity to create
+     * background colors to indicate how "hot" an element is, for example
+     * based on the number of events in a calendar cell.
+     */
+     /*
+      * Start color for the heatmap, representing the lowest intensity (e.g. 1 event in a calendar cell).
+      */
+    --b-heatmap-start          : oklab(0.53 -0.03 0.1);
+
+    /*
+     * End color for the heatmap, representing the highest intensity (e.g. 10 or more events in a calendar cell).
+     */
+    --b-heatmap-end            : oklab(0.38 0.13 0.03);
+
+    --b-heatmap-mix-blend-mode : hard-light;
+}
+
+/* Shades of primary color have to be specified per widget, for color-mix to work as intended */
+.b-bryntum:not(.b-nothing) {
+    --bi-primary-shade                                : var(--b-primary-50);
+
+    /* region Core */
+
+    --b-checkbox-checked-background                   : var(--bi-primary-shade);
+    --b-checkbox-checked-border-color                 : var(--b-checkbox-checked-background);
+    --b-checkbox-checked-hover-background             : var(--bi-primary-shade);
+
+    --b-list-checkbox-checked-background              : var(--b-primary);
+
+    --b-menu-background                               : var(--b-neutral-95);
+
+    --b-radio-checked-color                           : var(--b-neutral-100);
+    --b-radio-checked-background                      : var(--bi-primary-shade);
+    --b-radio-checked-border-color                    : var(--b-radio-checked-background);
+    --b-radio-check-gap                               : 0.25em;
+
+    --b-slide-toggle-background                       : var(--b-neutral-80);
+    --b-slide-toggle-hover-background                 : var(--b-neutral-80);
+    --b-slide-toggle-checked-hovered-thumb-background : var(--b-primary-95);
+    --b-slide-toggle-checked-border-color             : transparent;
+    --b-slide-toggle-checked-background               : var(--bi-primary-shade);
+    --b-slide-toggle-checked-hover-background         : var(--bi-primary-shade);
+
+    --b-slider-color                                  : var(--bi-primary-shade);
+
+    --b-tab-indicator-color                           : var(--bi-primary-shade);
+
+    --b-text-field-focus-border-color                 : var(--bi-primary-shade);
+    --b-text-field-filled-hover-border-color          : var(--bi-primary-shade);
+
+    --b-toast-background                              : var(--b-neutral-96);
+
+    /* endregion */
+
+    /* Grid */
+}
+
+/* Less vars target b-colorize compared to b-bryntum, making it cheaper to use for coloring many elements */
+.b-colorize:not(.b-nothing) {
+    /* Grid */
+    --b-quick-find-background          : var(--b-primary-90);
+
+    /* Scheduler */
+    --b-resource-time-range-background : var(--b-primary-70);
+    --b-resource-time-range-color      : var(--b-primary-70);
+}
+
+/* Override specific event styles in Scheduler */
+.b-sch-event-wrap {
+    --b-sch-event-tonal-background             : color-mix(in srgb, var(--b-primary), var(--b-mix) 80%);
+    --b-sch-event-tonal-hover-background       : color-mix(in srgb, var(--b-primary), var(--b-mix) 60%);
+    --b-sch-event-indented-background          : color-mix(in srgb, var(--b-primary), var(--b-mix) 80%);
+    --b-sch-event-indented-hover-background    : color-mix(in srgb, var(--b-primary), var(--b-mix) 70%);
+    --b-sch-event-indented-selected-background : color-mix(in srgb, var(--b-primary), var(--b-mix) 60%);
+}
+
+/* Theme meta data */
+.b-theme-info {
+    --b-theme-name             : "SvalbardDark";
+    --b-theme-filename         : "svalbard-dark";
+    --b-theme-button-rendition : "text";
+    --b-theme-label-position   : "align-before";
+    --b-theme-overlap-label    : "false";
+}

@@ -104,3 +104,6 @@ code,.mono{font-family:ui-monospace,Menlo,monospace;font-size:.82rem}
 
 .mt{margin-top:1rem}
 hr.sep{border:0;border-top:1px solid var(--rule);margin:1.2rem 0}
+.calendar{height:640px;border:1px solid var(--rule);border-radius:var(--r-m);overflow:hidden;margin-top:1rem;background:var(--surface)}
+blockquote.quote{margin:.55rem 0 .35rem;padding:.5rem .8rem;border-left:3px solid var(--deep-2);background:var(--glass);border-radius:0 var(--r-s) var(--r-s) 0;font-size:.95rem}
+@media (max-width:600px){.calendar{height:520px}}
