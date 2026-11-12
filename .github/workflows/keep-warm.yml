@@ -1,0 +1,14 @@
+# Render's free plan sleeps after 15 idle minutes; a judge's first click would wait 30-60 s.
+# shortcut: GitHub may delay scheduled runs; private repos spend Actions minutes (free once the repo is public).
+# Remove after judging ends (15 Dec 2026).
+name: keep-warm
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -fsS -o /dev/null --retry 3 --max-time 90 https://between-vjte.onrender.com/
