@@ -54,7 +54,7 @@ def create_app(settings: Settings, engine: sa.Engine, ai=None, pp=None) -> FastA
     from between.web import routes_agreement, routes_family, routes_rules
     for module in (routes_family, routes_agreement, routes_rules):
         app.include_router(module.router)
-    for name in ("routes_expenses", "routes_pay", "routes_webhooks", "routes_record", "routes_demo", "routes_calendar"):
+    for name in ("routes_expenses", "routes_pay", "routes_webhooks", "routes_record", "routes_demo", "routes_calendar", "routes_money"):
         try:  # later tasks add these routers
             module = __import__(f"between.web.{name}", fromlist=["router"])
         except ModuleNotFoundError:

@@ -55,6 +55,13 @@ def _valid_consent(consents, expense, other, cat, amount, incurred):
     return None
 
 
+def annual_cap_used(history: Sequence[dict], category: str, year: int, party: str) -> int:
+    """What `party` has already carried in `category` this `year`, as an annual cap counts it."""
+    return sum(h["owed_minor"] if h["owed_by"] == party else h["amount_minor"] - h["owed_minor"]
+               for h in history if h["category"] == category and h["year"] == year
+               and party in (h["owed_by"], h["paid_by"]))
+
+
 def evaluate(ruleset: dict, approvals: dict[str, str], expense: dict,
              consents: Sequence[dict] = (), history: Sequence[dict] = ()) -> dict:
     if not is_approved(ruleset, approvals):
@@ -110,10 +117,7 @@ def evaluate(ruleset: dict, approvals: dict[str, str], expense: dict,
         cites.append(_cite(r))
     owed += split_amount(base, split["params"]["shares"])[other]
     if r := _find(rules, "annual_cap", cat):
-        given = sum(h["owed_minor"] if h["owed_by"] == other else h["amount_minor"] - h["owed_minor"]
-                    for h in history if h["category"] == cat and h["year"] == year
-                    and other in (h["owed_by"], h["paid_by"]))
-        room = max(0, r["params"]["per_parent_minor"] - given)
+        room = max(0, r["params"]["per_parent_minor"] - annual_cap_used(history, cat, year, other))
         if owed > room:
             notes.append({"capped_from": owed})
             owed = room
