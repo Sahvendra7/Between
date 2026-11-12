@@ -14,7 +14,7 @@
   - AG Studio loads past its SRI check, with no CSP or integrity errors.
   - The Bryntum calendar has 39 events.
   - KPIs: $982.00 owed, $0.00 verified, $784.00 settled outside, $198.00 open (same as local, on Render Postgres).
-  - The Ledger guide is off until `BETWEEN_MONEY_AI=1` is set on Render.
+  - Ledger guide: `BETWEEN_MONEY_AI=1` set on Render (merged into the existing env vars, so no secrets were touched). Asked "If Mother pays $450 for soccer camp on 14 December…?", it called `preview_expense` and answered "needs consent first… nobody would owe anything yet", quoting §6.2 p.2 and pointing to the Home page. The browser made only `/money/ai` and `/money/preview` calls (200).
 - Hosted e2e after the deploy: `uv run python scripts/e2e_sandbox.py --base-url https://between-vjte.onrender.com` → **E2E PASS**.
   - Capture `15D46614X7056845N` ($252.00, approved in the sandbox as the Father's account); record intact.
   - The approving browser wasn't the script's session, so `/pay/return` refused it (403) as designed, and the payment completed through PayPal's read-back.
