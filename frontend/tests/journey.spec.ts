@@ -51,6 +51,8 @@ test("demo: rules, receipt upload, decision, PayPal hand-off, record, Money & Ti
   const errors = watchErrors(page);
   const fid = await openDemo(page);
   await rulesApprovedByBoth(page, fid);
+  await page.goto(`/f/${fid}`);
+  await expect(page.getByRole("link", { name: /Add the first expense/ })).toBeVisible();
 
   // the signed-in parent pays an orthodontist bill with a receipt
   await page.goto(`/f/${fid}/expenses/new`);
@@ -65,6 +67,10 @@ test("demo: rules, receipt upload, decision, PayPal hand-off, record, Money & Ti
   await expect(page.getByText("Payable")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
   await expect(page.locator(".clause").first()).toBeVisible();
+  await page.goto(`/f/${fid}`);
+  await expect(page.getByRole("link", { name: /waiting for payment through PayPal/ })).toHaveAttribute("href", new URL(expenseUrl).pathname);
+  await expect(page.getByRole("link", { name: /See the year in Money & Time/ })).toBeVisible();
+  await page.goto(expenseUrl);
 
   // the clause link opens the agreement with the quote highlighted
   await page.locator(".clause").first().locator("..").getByRole("link").click();
