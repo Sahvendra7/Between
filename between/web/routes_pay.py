@@ -14,7 +14,7 @@ from between import db, record
 from between.money import fee_estimate
 from between.payments import ALREADY_CAPTURED, PayPalError
 from between.reconcile import counts_as_paid, verify_payment
-from between.web.deps import actor, checked_form, get_conn, now, render, require_family
+from between.web.deps import actor, checked_form, get_conn, now, public_base, render, require_family
 from between.web.routes_expenses import _expense, citations, live_payment
 from between.web.routes_family import labels, parents
 
@@ -80,7 +80,7 @@ async def pay_start(request: Request, fid: str, eid: str, conn=Depends(get_conn)
     payee_email = parents(conn, fid)[live["payee_role"]]["paypal_email"]
     try:
         order = pp.create_order(live["amount_minor"], payee_email, f"exp_{eid}", f"pay_{pid}",
-                                f"{settings.base_url}/pay/return?p={pid}", f"{settings.base_url}/pay/cancel?p={pid}", f"pay_{pid}_create")
+                                f"{public_base(request)}/pay/return?p={pid}", f"{public_base(request)}/pay/cancel?p={pid}", f"pay_{pid}_create")
     except PayPalError as err:
         conn.execute(sa.update(db.payment).where(db.payment.c.id == pid).values(status="failed", last_error=f"create:{err.issue or err.name}"))
         return render(request, "pay_result.html", 502, s=s, fid=fid, e=e, payment=None,
@@ -122,7 +122,7 @@ async def return_start(request: Request, fid: str, eid: str, conn=Depends(get_co
     payee_email = parents(conn, fid)[corr["payee_role"]]["paypal_email"]
     try:
         order = pp.create_order(corr["amount_minor"], payee_email, f"corr_{pid}", f"pay_{pid}",
-                                f"{settings.base_url}/pay/return?p={pid}", f"{settings.base_url}/pay/cancel?p={pid}", f"pay_{pid}_create")
+                                f"{public_base(request)}/pay/return?p={pid}", f"{public_base(request)}/pay/cancel?p={pid}", f"pay_{pid}_create")
     except PayPalError as err:
         conn.execute(sa.update(db.payment).where(db.payment.c.id == pid).values(last_error=f"create:{err.issue or err.name}"))
         return render(request, "pay_result.html", 502, s=s, fid=fid, e=e, payment=None,

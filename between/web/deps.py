@@ -39,5 +39,46 @@ def actor(s: access.Session) -> dict:
     return {"kind": "parent", "role": s.role, "session_ref": s.ref}
 
 
+def public_base(request: Request) -> str:
+    """Where invite links and PayPal return URLs point: the frontend origin that proxied this request, if allowlisted."""
+    settings = request.app.state.settings
+    origin = request.headers.get("x-between-origin", "").rstrip("/")
+    return origin if origin and origin in settings.frontend_origins else settings.base_url
+
+
+def wants_json(request: Request) -> bool:
+    return request.headers.get("x-between-json") == "1"
+
+
+def _annotate(value, labels):
+    """Adds each rule's plain-English wording (present.describe_rule), so the frontend never re-implements it."""
+    from between.web.present import describe_rule
+    if isinstance(value, list):
+        return [_annotate(v, labels) for v in value]
+    if isinstance(value, dict):
+        out = {k: _annotate(v, labels) for k, v in value.items()}
+        if labels and {"kind", "category", "params"} <= value.keys():
+            try:
+                out["text"] = describe_rule(value, labels)
+            except (KeyError, TypeError):
+                pass
+        return out
+    return value
+
+
+def envelope(request: Request, name: str, ctx: dict) -> dict:
+    """The template's context as JSON: the same data the HTML page shows, for the Next.js frontend."""
+    from fastapi.encoders import jsonable_encoder
+    from between.web import present
+    data = jsonable_encoder(ctx)
+    labels = data.get("labels") or data.get("names") or {r: p.get("label") for r, p in (data.get("parents") or {}).items()}
+    return {"template": name.removesuffix(".html"), "demo_mode": request.app.state.settings.demo_mode,
+            "words": {"categories": present.CATEGORY_NAMES, "status": present.STATUS_WORDS, "reason": present.REASON_WORDS},
+            "ctx": _annotate(data, labels)}
+
+
 def render(request: Request, name: str, status: int = 200, **ctx):
+    if wants_json(request):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(envelope(request, name, ctx), status_code=status)
     return request.app.state.templates.TemplateResponse(request, name, ctx, status_code=status)

@@ -48,8 +48,8 @@ def create_app(settings: Settings, engine: sa.Engine, ai=None, pp=None) -> FastA
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
         detail = exc.detail if isinstance(exc.detail, str) else "Something went wrong."
-        return templates.TemplateResponse(request, "error.html", {"title": titles.get(exc.status_code, "Error"), "detail": detail},
-                                          status_code=exc.status_code)
+        from between.web.deps import render
+        return render(request, "error.html", exc.status_code, title=titles.get(exc.status_code, "Error"), detail=detail)
 
     from between.web import routes_agreement, routes_family, routes_rules
     for module in (routes_family, routes_agreement, routes_rules):

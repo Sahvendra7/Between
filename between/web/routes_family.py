@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
 from between import access, db, demo, record, ruleset as RS
-from between.web.deps import actor, checked_form, get_conn, now, render, require_family
+from between.web.deps import actor, checked_form, get_conn, now, public_base, render, require_family
 
 router = APIRouter()
 JOIN_ERRORS = {"used": "This invite link has already been used.", "expired": "This invite link has expired. Ask for a new one.",
@@ -66,7 +66,7 @@ def create_family(request: Request, role_label: str = Form(...), other_label: st
     s = access.session_for(conn, raw, t)
     record.append(conn, fid, "family.created", {"family_id": fid, "labels": {"A": role_label, "B": other_label}}, actor(s), now=t)
     token = access.create_invite(conn, fid, "B", t)
-    resp = render(request, "home.html", **home_context(conn, request, s, invite_url=f"{settings.base_url}/join/{token}"))
+    resp = render(request, "home.html", **home_context(conn, request, s, invite_url=f"{public_base(request)}/join/{token}"))
     resp.set_cookie(access.COOKIE_NAME, raw, **access.cookie_kwargs(settings))
     return resp
 
@@ -123,4 +123,4 @@ async def rotate_invite(request: Request, fid: str, conn=Depends(get_conn)):
         return render(request, "home.html", 409, error="The other parent has already joined, so their link can't be replaced.",
                       **home_context(conn, request, s))
     token = access.create_invite(conn, fid, other, now())
-    return render(request, "home.html", **home_context(conn, request, s, invite_url=f"{request.app.state.settings.base_url}/join/{token}"))
+    return render(request, "home.html", **home_context(conn, request, s, invite_url=f"{public_base(request)}/join/{token}"))
