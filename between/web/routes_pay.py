@@ -44,7 +44,7 @@ def pay_confirm(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
         raise HTTPException(status_code=403, detail="Only the parent who owes this can pay it.")
     names, people = labels(conn, fid), parents(conn, fid)
     return render(request, "pay_confirm.html", s=s, fid=fid, e=e, d=d, names=names, payee=people[d["owed_to"]],
-                  cites=citations(conn, drow["ruleset_hash"], d, names), fee=fee_estimate(d["amount_minor"]),
+                  cites=citations(conn, drow["ruleset_hash"], d, names, fid), fee=fee_estimate(d["amount_minor"]),
                   decision_hash=drow["hash"])
 
 

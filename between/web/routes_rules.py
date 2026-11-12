@@ -1,11 +1,16 @@
 """Review the rules, answer questions privately, approve the exact version."""
 from __future__ import annotations
 
+import json
+import re
+
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from between import db, ruleset as RS
+from between.agreement import pages
+from between.web.present import describe_rule
 from between.web.deps import actor, checked_form, get_conn, now, render, require_family
 from between.web.routes_family import labels
 
@@ -16,6 +21,31 @@ def _own_ruleset(conn, fid, rsid):
     row = conn.execute(sa.select(db.ruleset.c.family_id).where(db.ruleset.c.id == rsid)).first()
     if row is None or row.family_id != fid:
         raise HTTPException(status_code=404)
+
+
+def _split_on_quote(page_text: str, quote: str) -> tuple[str, str, str] | None:
+    """(before, quote as written in the agreement, after); whitespace may differ from the stored quote."""
+    words = quote.split()
+    m = re.search(r"\s+".join(map(re.escape, words)), page_text) if words else None
+    return (page_text[:m.start()], m.group(0), page_text[m.end():]) if m else None
+
+
+@router.get("/f/{fid}/source")
+def source(request: Request, fid: str, rs: str, r: str, conn=Depends(get_conn)):
+    """The agreement as uploaded, at the cited page, with the rule's quote highlighted."""
+    s = require_family(request, conn, fid)
+    row = conn.execute(sa.select(db.ruleset).where(db.ruleset.c.id == rs, db.ruleset.c.family_id == fid)).mappings().first()
+    rule = next((x for x in json.loads(row["json"])["rules"] if x["id"] == r and x.get("origin") == "agreement"), None) if row else None
+    if rule is None:
+        raise HTTPException(status_code=404)
+    text = conn.execute(sa.select(db.agreement.c.text).where(db.agreement.c.id == row["agreement_id"])).scalar_one()
+    names = labels(conn, fid)
+    shown = []
+    for n, lines in sorted(pages(text).items()):
+        body = "\n".join(lines).strip("\n")
+        parts = _split_on_quote(body, rule["source"]["quote"]) if n == rule["source"]["page"] else None
+        shown.append({"n": n, "body": body, "parts": parts})
+    return render(request, "source.html", s=s, fid=fid, rule=rule, what=describe_rule(rule, names), pages=shown)
 
 
 @router.get("/f/{fid}/rules")

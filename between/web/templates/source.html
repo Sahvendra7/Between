@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block main %}
+<p class="muted"><a href="/f/{{ fid }}/rules">← Rules</a></p>
+<h1>Where this rule comes from</h1>
+<section class="card">
+  <p class="what">{{ what }}</p>
+  <p class="cite">Page {{ rule.source.page }} · {{ rule.source.section }} · <a href="#clause">jump to the highlighted clause</a></p>
+  <p class="hint">Between accepted this rule only because this exact text appears on this page under this section. Both of you approved it.</p>
+</section>
+{% for p in pages %}
+<section class="card source-page" aria-label="Page {{ p.n }}">
+  <h2>Page {{ p.n }}</h2>
+  {% if p.parts %}<pre class="agreement">{{ p.parts[0] }}<mark id="clause">{{ p.parts[1] }}</mark>{{ p.parts[2] }}</pre>
+  {% else %}<pre class="agreement">{{ p.body }}</pre>{% endif %}
+</section>
+{% endfor %}
+{% endblock %}

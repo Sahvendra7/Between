@@ -65,7 +65,7 @@
   <article class="rule agreement">
     <p class="what">{{ describe(r, labels) }}</p>
     <blockquote>{{ r.source.quote }}</blockquote>
-    <p class="cite">Page {{ r.source.page }} · {{ r.source.section }}</p>
+    <p class="cite"><a href="/f/{{ fid }}/source?rs={{ rs.id }}&amp;r={{ r.id }}#clause">Page {{ r.source.page }} · {{ r.source.section }} · see it in your agreement</a></p>
   </article>
   {% endfor %}
   {% if rs.refused %}<p class="hint">{{ rs.refused|length }} proposal{{ "s" if rs.refused|length != 1 }} from the AI couldn't be matched word for word to your agreement, so {{ "they were" if rs.refused|length != 1 else "it was" }} set aside.</p>{% endif %}

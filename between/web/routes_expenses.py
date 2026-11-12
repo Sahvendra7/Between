@@ -160,9 +160,10 @@ async def confirm_expense(request: Request, fid: str, conn=Depends(get_conn)):
     return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
 
 
-def citations(conn, rs_hash: str, decision: dict, names: dict) -> list[dict]:
+def citations(conn, rs_hash: str, decision: dict, names: dict, fid: str) -> list[dict]:
     from between.web.present import describe_rule
-    row = conn.execute(sa.select(db.ruleset.c.json).where(db.ruleset.c.hash == rs_hash)).first() if rs_hash else None
+    row = conn.execute(sa.select(db.ruleset.c.id, db.ruleset.c.json).where(
+        db.ruleset.c.hash == rs_hash, db.ruleset.c.family_id == fid)).first() if rs_hash else None
     rules = {r["id"]: r for r in json.loads(row.json)["rules"]} if row else {}
     out = []
     for c in decision.get("cite", []):
@@ -172,7 +173,8 @@ def citations(conn, rs_hash: str, decision: dict, names: dict) -> list[dict]:
         elif "rule" in c:
             r = rules.get(c["rule"])
             out.append({"label": f"Page {c['page']} · {c['section']}", "what": describe_rule(r, names) if r else "",
-                        "quote": r["source"]["quote"] if r else None})
+                        "quote": r["source"]["quote"] if r else None,
+                        "href": f"/f/{fid}/source?rs={row.id}&r={c['rule']}#clause" if r else None})
         else:
             out.append({"label": f"Page {c.get('page')} · {c.get('section')}", "what": "Open question", "quote": None})
     return out
@@ -189,7 +191,7 @@ def expense_page(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
     paid = bool(live and counts_as_paid(live))
     can_pay = d.get("status") == "payable" and s.role == d.get("owed_by") and not paid and e["status"] != "reopened"
     can_amend = s.role == e["paid_by"] and e["status"] != "reopened" and corr is None and (live is None or paid)
-    return render(request, "decision.html", s=s, fid=fid, e=e, d=d, names=names, cites=citations(conn, drow["ruleset_hash"] if drow else "", d, names),
+    return render(request, "decision.html", s=s, fid=fid, e=e, d=d, names=names, cites=citations(conn, drow["ruleset_hash"] if drow else "", d, names, fid),
                   payment=live, paid=paid, can_pay=can_pay, can_redecide=d.get("status") in REDECIDABLE,
                   decision_hash=drow["hash"] if drow else "", correction=corr, returned=bool(corr and counts_as_paid(corr)),
                   can_amend=can_amend)

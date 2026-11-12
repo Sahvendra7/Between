@@ -35,7 +35,7 @@
     <div class="rule {{ 'resolution' if c.label.startswith('Resolution') else 'cited' }}">
       <p class="what">{{ c.what }}</p>
       {% if c.quote %}<blockquote>{{ c.quote }}</blockquote>{% endif %}
-      <p class="cite">{{ c.label }}</p>
+      <p class="cite">{% if c.href %}<a href="{{ c.href }}">{{ c.label }} · see it in your agreement</a>{% else %}{{ c.label }}{% endif %}</p>
       {% if c.label.startswith('Resolution') %}<p class="note">Your working arrangement in Between. It does not change your legal agreement.</p>{% endif %}
     </div>
   {% endfor %}

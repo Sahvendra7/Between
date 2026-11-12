@@ -107,3 +107,7 @@ hr.sep{border:0;border-top:1px solid var(--rule);margin:1.2rem 0}
 .calendar{height:640px;border:1px solid var(--rule);border-radius:var(--r-m);overflow:hidden;margin-top:1rem;background:var(--surface)}
 blockquote.quote{margin:.55rem 0 .35rem;padding:.5rem .8rem;border-left:3px solid var(--deep-2);background:var(--glass);border-radius:0 var(--r-s) var(--r-s) 0;font-size:.95rem}
 @media (max-width:600px){.calendar{height:520px}}
+
+/* Agreement source view: the cited clause highlighted in place */
+pre.agreement { white-space: pre-wrap; word-break: break-word; font: inherit; line-height: 1.55; margin: 0; }
+pre.agreement mark { background: var(--mark-bg, #ffe58a); color: var(--mark-fg, #1d1d1d); padding: 0 .15em; border-radius: 3px; scroll-margin-top: 30vh; }
