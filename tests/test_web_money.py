@@ -93,3 +93,55 @@ def test_balance_counts_outside_separately():
     add_year(c, fid)
     home = c.get(f"/f/{fid}").text
     assert "Settled outside Between (not verified)" in home
+
+
+AG_STUDIO_SRC = "https://cdn.jsdelivr.net/npm/ag-studio@3.1.0/dist/umd/ag-studio.min.js"
+AG_STUDIO_SRI = "sha384-AQulWK/PF30iLAso56dIH/1+Iv852aUbFC98K7N1ZpLYVvmamIEAU36dEbUaPym1"
+
+
+def test_money_page_csp_scoped():
+    from between.web.app import CSP
+    from between.web.routes_money import MONEY_CSP
+    app, engine, c, fid = approved_demo()
+    r = c.get(f"/f/{fid}/money")
+    assert r.status_code == 200 and r.headers["content-security-policy"] == MONEY_CSP
+    assert "style-src 'self' 'unsafe-inline'" in MONEY_CSP and "script-src 'self' https://cdn.jsdelivr.net;" in MONEY_CSP
+    assert f'src="{AG_STUDIO_SRC}"' in r.text and f'integrity="{AG_STUDIO_SRI}"' in r.text and 'crossorigin="anonymous"' in r.text
+    for path in (f"/f/{fid}", f"/f/{fid}/calendar", f"/f/{fid}/money.json"):
+        assert c.get(path).headers["content-security-policy"] == CSP, path
+
+
+def test_money_page_fallback_lists_expenses():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    page = c.get(f"/f/{fid}/money").text
+    assert 'id="ledger-fallback"' in page
+    for amount in ("$180.00", "$240.00", "$600.00", "$330.00"):
+        assert amount in page, amount
+    assert "Settled outside Between · not verified by PayPal" in page
+
+
+def test_money_page_offers_sample_year_only_when_empty():
+    app, engine, c, fid = approved_demo()
+    assert "Add a sample year (synthetic)" in c.get(f"/f/{fid}/money").text
+    add_year(c, fid)
+    assert "Add a sample year (synthetic)" not in c.get(f"/f/{fid}/money").text
+
+
+def test_money_page_without_approved_rules():
+    app, engine = make()
+    c = TestClient(app)
+    fid = c.post("/demo/new", follow_redirects=False).headers["location"].rsplit("/", 1)[1]
+    r = c.get(f"/f/{fid}/money")
+    assert r.status_code == 200 and "Approve your rules to see your year." in r.text
+
+
+def test_money_page_other_family_403():
+    app, engine, c1, fid1 = approved_demo()
+    _, _, c2, fid2 = approved_demo(app, engine)
+    assert c1.get(f"/f/{fid2}/money").status_code == 403
+
+
+def test_nav_links_money_and_time():
+    app, engine, c, fid = approved_demo()
+    assert f'href="/f/{fid}/money">Money &amp; Time</a>' in c.get(f"/f/{fid}").text

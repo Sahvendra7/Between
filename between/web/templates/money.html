@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block title %}Money &amp; Time · Between{% endblock %}
+{% block head %}<script src="{{ studio_src }}" integrity="{{ studio_sri }}" crossorigin="anonymous" defer></script>{% endblock %}
+{% block main %}
+<h1>Money &amp; Time</h1>
+<p class="lede">What your agreement means over the year: what each of you paid, what's due and by when, how much of a cap is left, and which clause says so.</p>
+{% if not approved %}
+  <p class="card">Approve your rules to see your year. Between decides each expense only from rules you've both approved.</p>
+{% else %}
+  {% if demo_family and not feed.expenses %}
+  <section class="card accent">
+    <p>This demo family has no history yet. Add a synthetic year of expenses, each decided by Between's rules engine under your approved rules. Past payments are marked as settled outside Between, never as verified by PayPal.</p>
+    <form method="post" action="/f/{{ fid }}/money/sample-year">{{ csrf(s) }}<button class="primary">Add a sample year (synthetic)</button></form>
+  </section>
+  {% endif %}
+  <div class="studio-bar"><button type="button" id="studio-mode" hidden>Edit report</button></div>
+  <div id="studio" class="studio" data-src="/f/{{ fid }}/money.json" data-license="{{ license }}" aria-label="Your year: report and ledger"></div>
+  <section class="card" id="ledger-fallback">
+    <h2>Ledger</h2>
+    {% if feed.expenses %}
+    <div class="table-wrap"><table>
+      <thead><tr><th scope="col">Date</th><th scope="col">Category</th><th scope="col">Paid by</th><th scope="col">Amount</th><th scope="col">Status</th></tr></thead>
+      <tbody>{% for e in feed.expenses %}
+      <tr><td>{{ e.date }}</td><td>{{ e.categoryName }}</td><td>{{ e.paidByName }}</td><td>{{ e.amountMinor|usd }}</td><td><a href="{{ e.href }}">{{ e.label }}</a></td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}<p>No expenses yet. <a href="/f/{{ fid }}/expenses/new">Add your first expense</a>.</p>{% endif %}
+  </section>
+  <p class="hint">Report by AG Studio (AG Grid), loaded from jsDelivr. Amounts come from Between's rules engine and PayPal; nothing here is computed by AI.</p>
+  <script type="module" src="/static/money.js"></script>
+{% endif %}
+{% endblock %}
