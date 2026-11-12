@@ -42,3 +42,4 @@ next-env.d.ts
 screens/
 playwright-report/
 test-results/
+test-results-prod/

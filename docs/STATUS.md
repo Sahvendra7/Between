@@ -77,3 +77,10 @@ $ uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000
 E2E PASS
 ```
 Hosted e2e: pending Render deploy (owner).
+
+## 12 Nov 2026 ~17:10 IST: Next.js frontend on Vercel
+
+- Backend commits 0c58c05 and 7baf777 pushed to main (owner's OK); Render redeployed; `BETWEEN_FRONTEND_ORIGINS` set via the Render connector (merge).
+- Vercel production: https://between-app-iota.vercel.app (project `between-app`). Preview: https://between-85yfz1gz7-sahvendra7s-projects.vercel.app (Vercel-login protected; smoke-tested with `vercel curl`: renders and reaches the backend).
+- Playwright against Vercel production: 10/10 (the invite-origin test passed on a rerun after Render's env rollout finished): two parents in separate sessions via invite, full demo journey through receipt upload, clause highlight, explicit pay confirmation and hand-off to sandbox.paypal.com, record/export, Money & Time (Bryntum + AG Studio), calendar; WebKit and Pixel 7 smoke; axe 0 serious/critical; no horizontal overflow at 375/768/1440.
+- Real sandbox capture → return → verify on the Vercel origin: `tests/paypal-manual.spec.ts`, run headed; needs a person to sign in to the sandbox. See docs/FRONTEND.md.

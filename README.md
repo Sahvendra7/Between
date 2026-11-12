@@ -4,7 +4,10 @@
 
 Built for the PayPal AI Hackathon 2026. **Sandbox demonstration with synthetic data. Not legal advice.**
 
-**Live demo:** https://between-vjte.onrender.com (Render free plan: the first visit after a quiet spell takes 30–60 seconds to wake up).
+**Live demo:** https://between-app-iota.vercel.app (Next.js on Vercel, backed by FastAPI on Render).
+**Backend and fallback UI:** https://between-vjte.onrender.com (Render free plan: the first visit after a quiet spell takes 30–60 seconds to wake up).
+
+The frontend's architecture, security, design system and test results are in [docs/FRONTEND.md](docs/FRONTEND.md).
 
 ---
 
