@@ -4,6 +4,7 @@
 
 Built for the PayPal AI Hackathon 2026. **Sandbox demonstration with synthetic data. Not legal advice.**
 
+**Demo video (2:48):** https://youtu.be/3ZO8_bDvW6Y
 **Live demo:** https://between-app-iota.vercel.app (Next.js on Vercel, backed by FastAPI on Render).
 **Backend and fallback UI:** https://between-vjte.onrender.com (Render free plan: the first visit after a quiet spell takes 30–60 seconds to wake up).
 
@@ -104,6 +105,8 @@ SQLAlchemy Core: SQLite locally, Postgres on Render
 - Refunds and voids by the app on a parent's account: `403 PERMISSION_DENIED`. That's why the design has no holds and no refunds.
 
 The same flow was then run through the app itself: $252.00 verified (capture `85D18309JT338721M`), and `scripts/verify.py` printed `completed verified … CHAIN OK`. See `docs/STATUS.md`.
+
+On 13 Nov 2026 the flow was also run end to end from the hosted Vercel frontend: $252.00 paid, PayPal fee $9.28, $242.72 received, **Verified with PayPal** (capture `36287647XP4367325`). The payment shown in the demo video was made the same way on the local Next.js frontend (capture `4U55993513576923H`). Both are PayPal sandbox payments with synthetic data.
 
 ## Run it locally
 

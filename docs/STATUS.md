@@ -1,5 +1,11 @@
 # Build status (evidence)
 
+## Hosted Vercel payment, end to end (Fri 13 Nov 2026, ~00:52 IST)
+
+- **PASS.** A family created and joined in two separate browser contexts on https://between-app-iota.vercel.app; agreement read by Gemini, rules approved by both parents (version 2 after the fee resolution), expense decided Payable $252.00 ("60% of $420.00 = $252.00").
+- The owner approved the PayPal sandbox payment as the Father test account. Between showed **Verified with PayPal**: paid $252.00, fee $9.28, received $242.72, capture `36287647XP4367325`, checked 2026-11-12 19:22 UTC.
+- Same flow on the local stack for the demo video: capture `4U55993513576923H` (verified, Record intact).
+
 ## Money & Time + Ledger guide, local (Thu 12 Nov 2026, branch `money-and-time`)
 - `uv run pytest -q` → 216 passed (after the final-review fixes).
 - In a real browser (local, SQLite, demo family, sample year): AG Studio 3.1.0 from jsDelivr renders under the page-scoped CSP with no CSP errors. KPIs: owed $982.00 (the nine engine decisions), settled outside $784.00, verified with PayPal $0.00, still open $198.00. Activity caps: $225.00 used of $1,500.00 per parent (§6.3), which matches a hand check.
