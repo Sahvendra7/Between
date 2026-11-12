@@ -113,6 +113,7 @@ export function Decision({ env }: P) {
               <p className="m-0 text-[1.08rem]"><Who role={d.owed_by}>{names[d.owed_by]}</Who> owes <Who role={d.owed_to}>{names[d.owed_to]}</Who>{d.due_on ? <span className="text-ink-2">, due {d.due_on}</span> : null}</p>
               {(d.notes ?? []).map((n: Record<string, number>, i: number) => (
                 <div key={i} className="grid gap-1">
+                  {n.share_pct ? <p className="m-0 text-[0.97rem]"><span className="font-semibold">How it was worked out:</span> {n.share_pct}% of {usd(n.share_of_minor)} = {usd(n.share_minor)}</p> : null}
                   {n.capped_from ? <p className="hint m-0">Capped by the annual limit (would have been {usd(n.capped_from)}).</p> : null}
                   {n.emergency ? <p className="hint m-0">Emergency: tell the other parent within {n.notify_within_hours} hours.</p> : null}
                   {n.fee_added_estimate ? <p className="hint m-0">Includes {usd(n.fee_added_estimate)} for PayPal&apos;s fee (estimate), as you both agreed. The actual fee comes from PayPal after payment.</p> : null}

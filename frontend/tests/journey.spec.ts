@@ -66,6 +66,7 @@ test("demo: rules, receipt upload, decision, PayPal hand-off, record, Money & Ti
   const expenseUrl = page.url();
   await expect(page.getByText("Payable")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
+  await expect(page.getByText("60% of $420.00 = $252.00")).toBeVisible();
   await expect(page.locator(".clause").first()).toBeVisible();
   await page.goto(`/f/${fid}`);
   await expect(page.getByRole("link", { name: /waiting for payment through PayPal/ })).toHaveAttribute("href", new URL(expenseUrl).pathname);

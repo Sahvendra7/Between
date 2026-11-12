@@ -115,7 +115,10 @@ def evaluate(ruleset: dict, approvals: dict[str, str], expense: dict,
         if r["params"]["party"] == other:
             owed += cover_now
         cites.append(_cite(r))
-    owed += split_amount(base, split["params"]["shares"])[other]
+    part = split_amount(base, split["params"]["shares"])[other]
+    owed += part
+    # the engine's own working, so every screen can show how the share was reached without recomputing it
+    notes.append({"share_pct": split["params"]["shares"][other], "share_of_minor": base, "share_minor": part})
     if r := _find(rules, "annual_cap", cat):
         room = max(0, r["params"]["per_parent_minor"] - annual_cap_used(history, cat, year, other))
         if owed > room:

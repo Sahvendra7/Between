@@ -108,6 +108,8 @@ async def sample_year(request: Request, fid: str, conn=Depends(get_conn)):
                   "not_approved": "Approve your rules (both of you) first, so Between can decide each expense.",
                   "already_added": "This family already has its sample year."}[code]
         raise HTTPException(status_code=403 if code == "not_demo" else 409, detail=detail) from None
+    except sa.exc.IntegrityError:  # two clicks at once: the second loses the race
+        raise HTTPException(status_code=409, detail="This family already has its sample year.") from None
     return RedirectResponse(f"/f/{fid}/money", status_code=303)
 
 

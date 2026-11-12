@@ -45,6 +45,7 @@ def test_p1_medical_share_and_due_date():
     out = E.evaluate(rs, ok, exp("medical", 42000))
     assert (out["status"], out["owed_by"], out["amount_minor"], out["due_on"]) == ("payable", "B", 25200, "2026-10-19")
     assert {c["section"] for c in out["cite"]} == {"6.1", "7.2"}
+    assert out["notes"] == [{"share_pct": 60, "share_of_minor": 42000, "share_minor": 25200}]  # the engine's own working
 
 
 def test_p1_rounding_paid_by_b():
@@ -79,7 +80,7 @@ def test_p1_annual_cap_limits_the_share():
     hist = [{"category": "extracurricular", "year": 2026, "amount_minor": 290000, "paid_by": "A",
              "owed_by": "B", "owed_minor": 145000}]
     out = E.evaluate(rs, ok, exp("extracurricular", 15000), history=hist)
-    assert out["amount_minor"] == 5000 and out["notes"] == [{"capped_from": 7500}]
+    assert out["amount_minor"] == 5000 and out["notes"] == [{"share_pct": 50, "share_of_minor": 15000, "share_minor": 7500}, {"capped_from": 7500}]
 
 
 def test_p1_not_shared_late_and_missing_receipt():

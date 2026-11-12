@@ -22,6 +22,7 @@
     <p class="amount">{{ d.amount_minor|usd }}</p>
     <p><strong>{{ names[d.owed_by] }} owes {{ names[d.owed_to] }}</strong>{% if d.due_on %} · due {{ d.due_on }}{% endif %}</p>
     {% for n in d.notes or [] %}
+      {% if n.share_pct %}<p class="hint">How it was worked out: {{ n.share_pct }}% of {{ n.share_of_minor|usd }} = {{ n.share_minor|usd }}.</p>{% endif %}
       {% if n.capped_from %}<p class="hint">Capped by the annual limit (would have been {{ n.capped_from|usd }}).</p>{% endif %}
       {% if n.emergency %}<p class="hint">Emergency: tell the other parent within {{ n.notify_within_hours }} hours.</p>{% endif %}
       {% if n.fee_added_estimate %}<p class="hint">Includes {{ n.fee_added_estimate|usd }} for PayPal's fee (estimate), as you both agreed. The actual fee comes from PayPal after payment.</p>{% endif %}
