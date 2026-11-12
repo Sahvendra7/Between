@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import uuid
 from pathlib import Path
 
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import IntegrityError
 
 from between import db, demo, ruleset as RS, validate as V
 from between.agreement import AgreementError, pdf_to_text
@@ -39,6 +41,23 @@ async def _text_from(form, settings) -> str:
     return form.get("text") or ""
 
 
+def _ai_once(conn, settings, kind: str, text: str, names: dict, compute):
+    """In demo mode, reuse the AI's earlier answer for the identical document and party labels."""
+    if not settings.demo_mode:
+        return compute()
+    key = hashlib.sha256(json.dumps([kind, text, names], sort_keys=True).encode()).hexdigest()
+    if row := conn.execute(sa.select(db.ai_cache.c.json).where(db.ai_cache.c.key == key)).first():
+        return json.loads(row.json)
+    out = compute()
+    if out is not None:  # failures aren't cached, so the next upload tries the model again
+        try:
+            with conn.begin_nested():
+                conn.execute(sa.insert(db.ai_cache).values(key=key, json=json.dumps(out), at=now()))
+        except IntegrityError:
+            pass
+    return out
+
+
 @router.post("/f/{fid}/agreement")
 async def upload_agreement(request: Request, fid: str, conn=Depends(get_conn)):
     s = require_family(request, conn, fid)
@@ -53,7 +72,7 @@ async def upload_agreement(request: Request, fid: str, conn=Depends(get_conn)):
     except AgreementError as e:
         return render(request, "agreement.html", 400, error=AGREEMENT_ERRORS[e.code], **ctx)
     try:
-        raw = extract_rules(text, names, client=request.app.state.ai)
+        raw = _ai_once(conn, settings, "rules", text, names, lambda: extract_rules(text, names, client=request.app.state.ai))
     except AIUnavailable:
         return render(request, "agreement.html", 503, error="The AI couldn't read this agreement right now, so nothing was changed. "
                       "Try again in a minute.", **ctx)
@@ -64,5 +83,5 @@ async def upload_agreement(request: Request, fid: str, conn=Depends(get_conn)):
     RS.create_version(conn, fid, aid, validated, names, actor(s), now=t)
     from between.schedule import extract_schedule  # P1: best effort; no schedule simply means no custody blocks
     from between.web.routes_calendar import store_schedule
-    store_schedule(conn, fid, aid, extract_schedule(text, client=request.app.state.ai))
+    store_schedule(conn, fid, aid, _ai_once(conn, settings, "schedule", text, {}, lambda: extract_schedule(text, client=request.app.state.ai)))
     return RedirectResponse(f"/f/{fid}/rules", status_code=303)

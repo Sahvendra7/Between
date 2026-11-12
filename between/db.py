@@ -158,6 +158,15 @@ schedule = Table(
     Column("at", TS, nullable=False),
 )
 
+# Demo mode only: the AI's raw reading of an identical synthetic agreement, reused so repeated sample
+# uploads don't spend the free-plan model quota. Output is still validated and approved like any other.
+ai_cache = Table(
+    "ai_cache", metadata,
+    Column("key", String, primary_key=True),
+    Column("json", Text, nullable=False),
+    Column("at", TS, nullable=False),
+)
+
 webhook_event = Table(
     "webhook_event", metadata,
     Column("id", String, primary_key=True),
