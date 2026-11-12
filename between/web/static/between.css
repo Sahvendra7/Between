@@ -110,4 +110,8 @@ blockquote.quote{margin:.55rem 0 .35rem;padding:.5rem .8rem;border-left:3px soli
 
 /* Agreement source view: the cited clause highlighted in place */
 pre.agreement { white-space: pre-wrap; word-break: break-word; font: inherit; line-height: 1.55; margin: 0; }
-pre.agreement mark { background: var(--mark-bg, #ffe58a); color: var(--mark-fg, #1d1d1d); padding: 0 .15em; border-radius: 3px; scroll-margin-top: 30vh; }
+pre.agreement mark { background: var(--wait-wash); color: var(--ink); box-shadow: 0 0 0 2px var(--wait); padding: 0 .15em; border-radius: 3px; scroll-margin-top: 30vh; }
+
+table.balance { width: 100%; border-collapse: collapse; margin: .5rem 0; }
+table.balance th, table.balance td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--rule); }
+table.balance th[scope="row"], table.balance thead th:first-child { text-align: left; font-weight: 500; }

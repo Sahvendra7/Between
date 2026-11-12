@@ -45,7 +45,34 @@ def family_summary(conn, s) -> dict:
         else:
             text = f"{who} asks to agree in advance: {category_name(c['category'])} up to {fmt_usd(c['max_minor'])}"
         consents.append({"id": c["id"], "text": text, "can_agree": not c["given_by"] and c["requested_by"] != s.role})
-    return {"expenses": expenses, "consents": consents}
+    return {"expenses": expenses, "consents": consents, "balance": _balance(conn, s.family_id, labels, pays, corrs)}
+
+
+def _balance(conn, fid, labels, pays, corrs) -> dict:
+    """This year's shared expenses per parent, from decisions and PayPal-verified payments only."""
+    from datetime import date
+    year = str(date.today().year)
+    rows = {r: {"paid": 0, "owed": 0, "received": 0} for r in ("A", "B")}
+    q = (sa.select(db.expense.c.id, db.expense.c.paid_by, db.expense.c.amount_minor, db.decision.c.json)
+         .join(db.decision, db.decision.c.expense_id == db.expense.c.id)
+         .where(db.expense.c.family_id == fid, db.expense.c.incurred_on.startswith(year)))
+    for e in conn.execute(q).mappings():
+        d = json.loads(e["json"])
+        if d.get("status") != "payable":
+            continue
+        rows[e["paid_by"]]["paid"] += e["amount_minor"]
+        rows[d["owed_to"]]["owed"] += d["amount_minor"]
+        for p, sign in ((pays.get(e["id"]), 1), (corrs.get(e["id"]), -1)):
+            if p and counts_as_paid(p):  # a verified return reduces what the original payee received
+                rows[p["payee_role"] if sign == 1 else p["payer_role"]]["received"] += sign * p["amount_minor"]
+    due = {r: v["owed"] - v["received"] for r, v in rows.items()}
+    net = due["A"] - due["B"]
+    if net == 0:
+        line = "All settled"
+    else:
+        to, by = ("A", "B") if net > 0 else ("B", "A")
+        line = f"{labels.get(by, by)} owes {labels.get(to, to)} {fmt_usd(abs(net))}"
+    return {"year": year, "rows": rows, "line": line, "any": any(v["paid"] for v in rows.values())}
 
 
 __all__ = ["family_summary", "json"]

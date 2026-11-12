@@ -83,3 +83,15 @@ def test_home_flags_a_due_return():
     app, engine, pp, a, b, fid, loc = paid()
     amend(a, loc, "380.00")
     assert "$24.00 to return" in a.get(f"/f/{fid}").text
+
+
+def test_home_balance_tracks_payments_and_returns():
+    pp = FakePayPal()
+    app, engine = make(ai=fake_ai(PLAN1), pp=pp)
+    a, b, fid = family_with_rules(app, DOC1)
+    submit_expense(a, fid, "medical")
+    assert "Father owes Mother $252.00" in a.get(f"/f/{fid}").text
+    app, engine, pp, a, b, fid, loc = paid(pp)
+    assert "All settled" in a.get(f"/f/{fid}").text
+    amend(a, loc, "380.00")
+    assert "Mother owes Father $24.00" in b.get(f"/f/{fid}").text

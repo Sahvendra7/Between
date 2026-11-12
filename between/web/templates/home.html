@@ -35,6 +35,22 @@
   {% endif %}
 </section>
 
+{% if balance.any %}
+<section class="card">
+  <h2>{{ balance.year }} so far</h2>
+  <p class="amount">{{ balance.line }}</p>
+  <table class="balance">
+    <thead><tr><th scope="col"></th>{% for r in ("A", "B") %}<th scope="col">{{ parents[r].label }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      <tr><th scope="row">Paid for shared expenses</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].paid|usd }}</td>{% endfor %}</tr>
+      <tr><th scope="row">Owed to them under your rules</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].owed|usd }}</td>{% endfor %}</tr>
+      <tr><th scope="row">Received, verified with PayPal</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].received|usd }}</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+  <p class="hint">Only payments PayPal confirms count. Expenses that need both of you, or aren't shared, aren't included.</p>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>Expenses</h2>
   {% if expenses %}
