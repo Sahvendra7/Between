@@ -1,5 +1,16 @@
 # Build status (evidence)
 
+## Money & Time + Ledger guide, local (Thu 12 Nov 2026, branch `money-and-time`)
+- `uv run pytest -q` → 213 passed.
+- In a real browser (local, SQLite, demo family, sample year): AG Studio 3.1.0 from jsDelivr renders under the page-scoped CSP with no CSP errors. KPIs: owed $982.00 (the nine engine decisions), settled outside $784.00, verified with PayPal $0.00, still open $198.00. Activity caps: $225.00 used of $1,500.00 per parent (§6.3), which matches a hand check.
+- The Bryntum calendar shows the open $198.00 window (Father → Mother, due 2026-11-15, §7.2 p.3). Clicking it filters every report widget to that expense.
+- Ledger guide on `gemini-3.5-flash-lite`, real key:
+  - "If Mother pays $450 for soccer camp on 14 December…" → `preview_expense` → `needs_consent`, quoting §6.2 p.2.
+  - "Why does Father owe $198.00?" → `view_schema`, `execute_query`, `explain_expense`, `show_on_calendar` → an answer quoting §6.1 p.2 and §7.2 p.3.
+  - The browser calls only `/money/*`, never Gemini directly.
+- Proxy live check: a two-turn tool call with the thought signature sent back → `completed`. Without the signature, Gemini answers 400.
+- Hosted: **pending** the owner's OK to merge into `main` (Render auto-deploys from it).
+
 ## Judge-facing polish, hosted (Thu 12 Nov 2026, ~09:00 IST, commit `6282260`)
 - Over HTTP against https://between-vjte.onrender.com (Render Postgres): the rules page's "see it in your agreement" → `200` with the clause highlighted; Mother asks for 2 days in Father's week → "Waiting for Father"; Father agrees → calendar event `swap-agreed`; the vendored calendar script has the drag hook.
 - In a real browser (local): dragging across 17–19 Nov in Father's week as Mother filled and submitted the swap form; Father clicked Agree; the Bryntum calendar shows "With Mother · swap agreed".

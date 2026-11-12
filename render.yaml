@@ -37,6 +37,10 @@ services:
         sync: false
       - key: DEMO_PARENT_B_EMAIL
         sync: false
+      - key: BETWEEN_MONEY_AI
+        value: "1"
+      - key: AG_STUDIO_LICENSE
+        sync: false
 
 databases:
   - name: between-db

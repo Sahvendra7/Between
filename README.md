@@ -26,7 +26,11 @@ Between does three things, in this order:
 4. **Switch to Father → Pay $252.00 with PayPal.** Confirm, approve in the PayPal sandbox as the Father's sandbox account (see *Judge sandbox accounts*), and come back to **Verified with PayPal**: paid $252.00, PayPal fee $9.28, received $242.72 (fee and received amount as reported by PayPal).
 5. **Record.** Every step has an actor and a chain hash. **Check every payment with PayPal now** re-reads each capture from PayPal. The home page shows this year's balance per parent, counting only payments PayPal confirmed.
 6. **Calendar (Bryntum).** Parenting time read from the agreement (§2.1). As Mother, **drag across days in Father's week** to ask for a swap; switch to Father and **Agree**. The swap appears on the calendar and in the record. It's an arrangement between the parents, not a change to the plan.
-7. **Optional: correct an amount.** As Mother, lower the expense to $380.00. Father's share is now $228.00, so Mother sees **Return $24.00 to Father** and sends it back through the same sandbox checkout, verified with PayPal like any payment.
+7. **Money & Time (AG Studio + Bryntum).** On a new demo family, after both parents approve, click **Add a sample year (synthetic)**. Twelve expenses are decided by the real rules engine (one needs consent, one was asked for too late, one isn't shared). Past payments are marked **settled outside Between · not verified by PayPal**; only real sandbox checkouts ever say "Verified with PayPal".
+   - The **Bryntum calendar** shows parenting weeks, expenses, and each **payment window** from the day it was asked for to the day it's due (§7.2), coloured open, overdue, verified or settled outside.
+   - The **AG Studio report** shows the year: owed under your rules, verified with PayPal, still open, activity cap left per parent (§6.3), spending by category and month, and every expense with its outcome. Click a payment window on the calendar and the whole report focuses on that expense.
+   - **Ledger guide** (when `BETWEEN_MONEY_AI=1`): an AG Studio custom agent. Ask "If Mother pays $450 for soccer camp on 14 December, what happens?" and it calls `preview_expense`, which runs Between's **rules engine** without saving anything: "needs consent first, §6.2", with the clause quoted. "Why does Father owe $198?" calls `explain_expense` (the stored decision and its clauses) and `show_on_calendar` (moves the Bryntum calendar). The agent's tools are read-only: it can't pay, approve, consent or change rules, and it never computes an amount.
+8. **Optional: correct an amount.** As Mother, lower the expense to $380.00. Father's share is now $228.00, so Mother sees **Return $24.00 to Father** and sends it back through the same sandbox checkout, verified with PayPal like any payment.
 
 ## Sandbox demonstration: what the PayPal flow is, and what it isn't
 
@@ -39,6 +43,12 @@ Between does three things, in this order:
   - **Holds:** Between can't void a hold placed on a parent's account (`403`).
   - **Refunds:** Between can't refund a capture paid to a parent's account (`403`). Corrections are a payment back the other way, or the receiving parent refunds in PayPal and Between detects it.
   - **Payouts:** a payout is business-originated money, not a parent-to-parent payment.
+
+## Money & Time: what the AI may and may not do
+
+- **Data:** the page gets one server-built feed for your family only (`between/web/ledger.py`): expenses, decisions, payment windows, consents, payments and the clauses they cite. Never private answers, unapproved drafts, the agreement's full text, consent notes or PayPal emails.
+- **Ledger guide:** AG Studio's Agent Framework with a custom agent and three custom tools. Turns go through `POST /f/{id}/money/ai`, which translates AG Studio's request to Gemini's OpenAI-compatible chat completions and back, keeping Gemini's thought signatures (required for tool calls). Guarded by session, CSRF header, demo mode, a 64 KB body cap and 40 calls per family per hour.
+- **What the model sees:** the questions, the tool schemas, and the rows and tool results it asks for. In the demo these are synthetic. A real launch would need both parents' consent to send their ledger to an AI provider.
 
 ## Not legal advice
 
@@ -113,6 +123,8 @@ uv run uvicorn between.web.app:app --reload
 | `BETWEEN_BASE_URL` | Where PayPal sends the payer back (e.g. `http://127.0.0.1:8000`) |
 | `BETWEEN_DEMO_MODE` | `1` = synthetic-only controls and the demo shortcuts |
 | `BETWEEN_SECURE_COOKIES` | `1` behind HTTPS |
+| `BETWEEN_MONEY_AI` | `1` turns on the Ledger guide on Money & Time (needs `GEMINI_API_KEY`; demo mode only) |
+| `AG_STUDIO_LICENSE` | Optional AG Studio licence key (removes the trial watermark) |
 
 ## Judge sandbox accounts
 
@@ -121,7 +133,7 @@ The hosted demo's two parents are dedicated **PayPal sandbox** personal accounts
 ## Tests
 
 ```bash
-uv run pytest -q                                          # 183 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
+uv run pytest -q                                          # 213 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
 uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (Gemini or Anthropic key; add --workers 1 on a free plan): 3 agreements + 1 planted-instruction agreement
 uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000   # golden path with a real sandbox approval
 uv run python scripts/verify.py --family <id>             # independent check of every payment against PayPal + the record chain
@@ -144,6 +156,8 @@ Between reuses a few small, tested pieces from the author's earlier project Kitt
 - Anthropic Claude (same code path, used when only `ANTHROPIC_API_KEY` is set): `claude-sonnet-5-5` reads agreements; `claude-haiku-5-5` reads receipts.
 - Whichever model answers, it only proposes: the deterministic validator accepts a rule only if its quote is on the stated page under the stated section, and both parents approve.
 - PayPal: Orders v2 (create, capture, get), Payments v2 (get capture), Webhooks (verify-webhook-signature), sandbox only.
+- **AG Studio 3.1.0 (AG Grid):** the Money & Time report and the Ledger guide (Agent Framework: custom agent, custom tools, our Gemini adapter). Commercial; loaded from jsDelivr pinned with SRI and never vendored into this repo. AG Grid provides the licence key for hackathon judging (`AG_STUDIO_LICENSE`); without it AG Studio shows a trial watermark.
+- **Bryntum Calendar Community 8.0.0 (MIT, vendored):** parenting time, swaps, expenses and payment windows.
 - FastAPI, SQLAlchemy, Jinja2, pypdf, httpx. Hosting on Render.
 
 ## Licence
