@@ -27,7 +27,7 @@ def family_summary(conn, s) -> dict:
     pays = {}
     for p in conn.execute(sa.select(db.payment).join(db.expense, db.expense.c.id == db.payment.c.expense_id)
                           .where(db.expense.c.family_id == s.family_id)).mappings():
-        if p["status"] not in ("failed", "declined", "cancelled"):
+        if p["kind"] == "share" and p["status"] not in ("failed", "declined", "cancelled"):
             pays[p["expense_id"]] = dict(p)
     expenses = []
     for e in conn.execute(sa.select(db.expense).where(db.expense.c.family_id == s.family_id)

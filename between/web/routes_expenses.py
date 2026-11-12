@@ -13,7 +13,8 @@ from sqlalchemy.exc import IntegrityError
 
 from between import db, demo, engine as E, record, ruleset as RS
 from between.extraction import AIUnavailable, read_receipt
-from between.money import MoneyError, fmt_usd, parse_usd
+from between.reconcile import counts_as_paid
+from between.money import MoneyError, fee_estimate, fmt_usd, parse_usd
 from between.web.deps import actor, checked_form, get_conn, now, render, require_family
 from between.web.present import EXPENSE_CATEGORIES
 from between.web.routes_family import labels
@@ -23,6 +24,7 @@ MONEY_ERRORS = {"empty": "Enter the amount you paid.", "format": "Enter an amoun
                 "too_many_decimals": "Use at most two decimal places.", "not_positive": "The amount must be more than zero.",
                 "too_large": "That's more than this demo handles."}
 REDECIDABLE = {"needs_consent", "needs_parents", "refused"}
+DEAD = ("failed", "declined", "cancelled")
 
 
 def _today() -> date:
@@ -46,6 +48,12 @@ def _history(conn, fid, exclude_id) -> list[dict]:
             out.append({"category": r["category"], "year": int(r["incurred_on"][:4]), "amount_minor": r["amount_minor"],
                         "paid_by": r["paid_by"], "owed_by": d["owed_by"], "owed_minor": d["amount_minor"]})
     return out
+
+
+def live_payment(conn, eid, kind) -> dict | None:
+    row = conn.execute(sa.select(db.payment).where(db.payment.c.expense_id == eid, db.payment.c.kind == kind,
+                                                   db.payment.c.status.not_in(DEAD))).mappings().first()
+    return dict(row) if row else None
 
 
 def _consents(conn, fid) -> list[dict]:
@@ -177,15 +185,49 @@ def expense_page(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
     drow = conn.execute(sa.select(db.decision).where(db.decision.c.expense_id == eid)).mappings().first()
     d = json.loads(drow["json"]) if drow else {"status": "refused"}
     names = labels(conn, fid)
-    pays = [dict(p) for p in conn.execute(sa.select(db.payment).where(db.payment.c.expense_id == eid)
-                                          .order_by(db.payment.c.id)).mappings()]
-    from between.reconcile import counts_as_paid
-    live = next((p for p in pays if p["status"] not in ("failed", "declined", "cancelled")), None)
+    live, corr = live_payment(conn, eid, "share"), live_payment(conn, eid, "correction")
     paid = bool(live and counts_as_paid(live))
     can_pay = d.get("status") == "payable" and s.role == d.get("owed_by") and not paid and e["status"] != "reopened"
+    can_amend = s.role == e["paid_by"] and e["status"] != "reopened" and corr is None and (live is None or paid)
     return render(request, "decision.html", s=s, fid=fid, e=e, d=d, names=names, cites=citations(conn, drow["ruleset_hash"] if drow else "", d, names),
                   payment=live, paid=paid, can_pay=can_pay, can_redecide=d.get("status") in REDECIDABLE,
-                  decision_hash=drow["hash"] if drow else "")
+                  decision_hash=drow["hash"] if drow else "", correction=corr, returned=bool(corr and counts_as_paid(corr)),
+                  can_amend=can_amend)
+
+
+@router.post("/f/{fid}/expenses/{eid}/amend")
+async def amend(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
+    """Lower an expense's amount. If the share was already paid, the parent who received too much owes
+    the difference back as a 'correction' payment (a reverse checkout: Between can't refund on a parent's behalf)."""
+    s = require_family(request, conn, fid)
+    form = await checked_form(request, s)
+    e = _expense(conn, fid, eid)
+    if s.role != e["paid_by"]:
+        raise HTTPException(status_code=403, detail="Only the parent who paid this expense can correct its amount.")
+    try:
+        cents = parse_usd(form.get("amount", ""))
+    except MoneyError as err:
+        raise HTTPException(status_code=400, detail=MONEY_ERRORS[err.code]) from None
+    if cents >= e["amount_minor"]:
+        raise HTTPException(status_code=409, detail="A correction can only lower the amount. Add a new expense for anything extra.")
+    share = live_payment(conn, eid, "share")
+    if e["status"] == "reopened" or live_payment(conn, eid, "correction") or (share and not counts_as_paid(share)):
+        raise HTTPException(status_code=409, detail="A payment for this expense is still in progress. Try again once it's finished.")
+    t = now()
+    conn.execute(sa.update(db.expense).where(db.expense.c.id == eid).values(amount_minor=cents))
+    record.append(conn, fid, "expense.amended", {"expense_id": eid, "from_minor": e["amount_minor"], "to_minor": cents}, actor(s), now=t)
+    d = decide(conn, fid, {**e, "amount_minor": cents}, s)
+    if share:
+        owed = d["amount_minor"] if d.get("status") == "payable" and d.get("owed_by") == share["payer_role"] else 0
+        if (delta := share["amount_minor"] - owed) > 0:
+            pid = uuid.uuid4().hex[:12]
+            conn.execute(sa.insert(db.payment).values(
+                id=pid, expense_id=eid, kind="correction", payer_role=share["payee_role"], payee_role=share["payer_role"],
+                amount_minor=delta, request_id=f"pay_{pid}", status="due", verification="unverified",
+                fee_estimate_minor=fee_estimate(delta)))
+            record.append(conn, fid, "payment.due", {"payment_id": pid, "expense_id": eid, "kind": "correction", "amount_minor": delta,
+                                                     "payer": share["payee_role"], "payee": share["payer_role"]}, actor(s), now=t)
+    return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
 
 
 @router.post("/f/{fid}/expenses/{eid}/redecide")

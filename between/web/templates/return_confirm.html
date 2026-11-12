@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "base.html" import csrf %}
+{% block main %}
+<p class="muted"><a href="/f/{{ fid }}/expenses/{{ e.id }}">← Back to the expense</a></p>
+<h1>Send {{ corr.amount_minor|usd }} back to {{ payee.display_name }}</h1>
+<section class="card decision">
+  <dl class="facts">
+    <dt>For</dt><dd>{{ category_name(e.category) }}, now {{ e.amount_minor|usd }}, paid by {{ names[e.paid_by] }} on {{ e.incurred_on }}</dd>
+    <dt>Why</dt><dd>The amount was lowered after the share was paid; this is the difference.</dd>
+    <dt>Goes to</dt><dd>{{ payee.display_name }} ({{ payee.label }}), their own PayPal account</dd>
+  </dl>
+  <p class="hint">This is a PayPal sandbox checkout between personal accounts: an Orders API payment, not a Friends &amp; Family transfer.
+    PayPal will charge {{ payee.display_name }} about {{ fee|usd }} (estimate). The actual fee appears after payment, from PayPal.</p>
+  <form method="post" action="/f/{{ fid }}/expenses/{{ e.id }}/return" class="stack mt">{{ csrf(s) }}
+    <label class="choice"><input type="checkbox" name="confirm" value="yes" required> I confirm I'm sending {{ corr.amount_minor|usd }} back to {{ payee.display_name }}</label>
+    <button class="primary">Continue to PayPal (sandbox)</button>
+  </form>
+</section>
+{% endblock %}

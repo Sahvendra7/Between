@@ -53,9 +53,29 @@
   </dl>
   {% endif %}
 
+  {% if correction %}
+  <h2>Correction</h2>
+  {% if returned %}
+    <p class="pill good">Returned · verified with PayPal</p>
+    <p>{{ names[correction.payer_role] }} sent back {{ correction.amount_minor|usd }} to {{ names[correction.payee_role] }} after the amount was lowered.</p>
+  {% elif s.role == correction.payer_role %}
+    <p><strong>Return {{ correction.amount_minor|usd }} to {{ names[correction.payee_role] }}</strong></p>
+    <p class="hint">The amount was lowered after this was paid, so you received {{ correction.amount_minor|usd }} more than the share now owed.</p>
+    <p><a class="button primary" href="/f/{{ fid }}/expenses/{{ e.id }}/return">Send {{ correction.amount_minor|usd }} back with PayPal</a></p>
+  {% else %}
+    <p>Waiting for {{ names[correction.payer_role] }} to send back {{ correction.amount_minor|usd }} through PayPal.</p>
+  {% endif %}
+  {% endif %}
+
   <div class="row mt">
   {% if can_pay %}<a class="button primary" href="/f/{{ fid }}/expenses/{{ e.id }}/pay">Pay {{ d.amount_minor|usd }} with PayPal</a>{% endif %}
   {% if can_redecide %}<form method="post" action="/f/{{ fid }}/expenses/{{ e.id }}/redecide" class="inline">{{ csrf(s) }}<button>Check again</button></form>{% endif %}
   </div>
+  {% if can_amend %}
+  <form method="post" action="/f/{{ fid }}/expenses/{{ e.id }}/amend" class="row mt">{{ csrf(s) }}
+    <label>Lower the amount to <input name="amount" inputmode="decimal" required placeholder="0.00"></label>
+    <button>Correct the amount</button>
+  </form>
+  {% endif %}
 </section>
 {% endblock %}

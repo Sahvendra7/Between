@@ -4,7 +4,7 @@
 {% if payment %}
   {% if paid %}
   <h1>Verified with PayPal</h1>
-  <p class="pill good">Paid · verified with PayPal</p>
+  <p class="pill good">{{ "Returned" if payment.kind == "correction" else "Paid" }} · verified with PayPal</p>
   {% else %}
   <h1>PayPal status: {{ payment.status }}</h1>
   <p class="pill wait">Not counted as paid yet</p>
