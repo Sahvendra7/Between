@@ -6,6 +6,7 @@
 - Served mostly by `gemini-3.6-flash`; some calls fell back to `gemini-3.5-flash-lite` after a 429. `gemini-3.8-flash` mostly answered 503 or timed out, so it isn't used.
 - With 8 parallel requests the free plan returns 429s and the lite fallback misses the plan 3 memo's rules. Those failures are fail-closed: decisions went to "needs both parents", never a wrong amount, and no injected rule was accepted.
 - Receipt `ortho_420.png` read as 42000 cents; plan 1 schedule grounded (alternate weeks, Sunday 18:00).
+- Hosted (commit `0ff2a11`, Gemini key on Render): a new demo family uploaded sample agreement 2 → rules page in 19.3 s, 7 grounded rules to approve, each cited by page and section.
 
 ## Real sandbox run through the hosted app (Thu 12 Nov 2026, ~07:12 IST)
 - Host: https://between-vjte.onrender.com (Render free web service + Render Postgres 16, Singapore), commit `3f3d350`.
