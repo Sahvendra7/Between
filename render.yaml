@@ -41,6 +41,8 @@ services:
         value: "1"
       - key: AG_STUDIO_LICENSE
         sync: false
+      - key: BETWEEN_FRONTEND_ORIGINS  # the Vercel origin(s) allowed to proxy to this backend
+        sync: false
 
 databases:
   - name: between-db

@@ -60,7 +60,7 @@ async def pay_start(request: Request, fid: str, eid: str, conn=Depends(get_conn)
         raise HTTPException(status_code=400, detail="Confirm the payment first.")
     if form.get("decision_hash") != drow["hash"] or e["status"] == "reopened":
         raise HTTPException(status_code=409, detail="This expense changed since you opened the page. Reload and check it again.")
-    pp, settings, t = _pp(request), request.app.state.settings, now()
+    pp, t = _pp(request), now()
     live = live_payment(conn, eid, "share")
     if live and (counts_as_paid(live) or live["capture_id"] or live["status"] == "outside"):
         return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
@@ -118,7 +118,7 @@ async def return_start(request: Request, fid: str, eid: str, conn=Depends(get_co
         raise HTTPException(status_code=400, detail="Confirm the return first.")
     if counts_as_paid(corr) or corr["capture_id"]:
         return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
-    pp, settings, t, pid = _pp(request), request.app.state.settings, now(), corr["id"]
+    pp, t, pid = _pp(request), now(), corr["id"]
     payee_email = parents(conn, fid)[corr["payee_role"]]["paypal_email"]
     try:
         order = pp.create_order(corr["amount_minor"], payee_email, f"corr_{pid}", f"pay_{pid}",

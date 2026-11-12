@@ -148,7 +148,7 @@ async def ledger_guide_turn(request: Request, fid: str, conn=Depends(get_conn)):
 @router.get("/f/{fid}/money/expense/{eid}.json")
 def expense_json(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
     """The stored decision for one expense, with the clauses it cites, for the Ledger guide. Read-only."""
-    s = require_family(request, conn, fid)
+    require_family(request, conn, fid)
     e = _expense(conn, fid, eid)  # 404 unless it's this family's
     drow = conn.execute(sa.select(db.decision).where(db.decision.c.expense_id == eid)).mappings().first()
     d = json.loads(drow["json"]) if drow else {"status": "undecided"}

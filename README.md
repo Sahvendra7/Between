@@ -128,6 +128,7 @@ uv run uvicorn between.web.app:app --reload
 | `BETWEEN_SECURE_COOKIES` | `1` behind HTTPS |
 | `BETWEEN_MONEY_AI` | `1` turns on the Ledger guide on Money & Time (needs `GEMINI_API_KEY`; demo mode only) |
 | `AG_STUDIO_LICENSE` | Optional AG Studio licence key (removes the trial watermark) |
+| `BETWEEN_FRONTEND_ORIGINS` | Comma-separated origins of the Next.js frontend(s) allowed to proxy to this backend (e.g. `http://localhost:3000`). Invite links and PayPal return URLs use the frontend's origin only if it is listed here |
 
 ## Judge sandbox accounts
 
@@ -140,6 +141,15 @@ uv run pytest -q                                          # 220 tests: validator
 uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (Gemini or Anthropic key; add --workers 1 on a free plan): 3 agreements + 1 planted-instruction agreement
 uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000   # golden path with a real sandbox approval
 uv run python scripts/verify.py --family <id>             # independent check of every payment against PayPal + the record chain
+```
+
+Frontend (from `frontend/`, with the backend on :8000 started with `BETWEEN_FRONTEND_ORIGINS=http://localhost:3000`):
+
+```bash
+npm ci && npm run build                                   # needs no secrets; BETWEEN_BACKEND_URL defaults to http://127.0.0.1:8000
+npm run dev                                               # http://localhost:3000
+npx playwright test                                       # journey in two parent sessions, Judge Mode, axe, 375/768/1440 layouts; stops at the hand-off to PayPal's sandbox
+E2E_BASE_URL=https://between-app-iota.vercel.app npx playwright test journey   # the same journey against the hosted site
 ```
 
 ## Hosting (Render)
