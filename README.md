@@ -49,7 +49,8 @@ Between coordinates expenses. It doesn't interpret the law. Approving rules or r
 browser (each parent) ── single-use invite → session cookie (HttpOnly, SameSite=Lax, CSRF on every form)
         │
 FastAPI + Jinja2 (between/web)
-  ├─ extraction.py   claude-sonnet-5-5 → proposed rules (structured output, no tools); claude-haiku-5-5 → receipt total
+  ├─ extraction.py   proposed rules + receipt total (structured output, no tools); Claude or Gemini
+  ├─ gemini.py       Gemini backend behind the same interface (used when GEMINI_API_KEY is set)
   ├─ validate.py     quote on page + right section + numbers in quote + percentages bound to the right parent
   ├─ ruleset.py      versions, both approvals, private answers, operational resolutions
   ├─ engine.py       pure decision: consent, deadlines, caps, splits in whole cents, citations
@@ -105,7 +106,8 @@ uv run uvicorn between.web.app:app --reload
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | A **sandbox** REST app from developer.paypal.com (Apps & Credentials, Sandbox) |
 | `DEMO_PARENT_A_EMAIL`, `DEMO_PARENT_B_EMAIL` | Two US **personal** sandbox accounts (Testing Tools → Sandbox Accounts) |
 | `PAYPAL_WEBHOOK_ID` | Optional locally: register `<public URL>/webhooks/paypal` (e.g. via a tunnel) for `CHECKOUT.ORDER.APPROVED` and `PAYMENT.CAPTURE.*` |
-| `ANTHROPIC_API_KEY` | Optional. Without it, agreement reading says "AI unavailable" and you type the receipt amount; demo families ship with pre-extracted rules |
+| `GEMINI_API_KEY` | Optional; takes precedence over Anthropic. The hosted demo uses it (free plan) |
+| `ANTHROPIC_API_KEY` | Optional. Without either key, agreement reading says "AI unavailable" and you type the receipt amount; demo families ship with pre-extracted rules |
 | `DATABASE_URL` | Defaults to `sqlite:///between.db`; Postgres URLs work too |
 | `BETWEEN_BASE_URL` | Where PayPal sends the payer back (e.g. `http://127.0.0.1:8000`) |
 | `BETWEEN_DEMO_MODE` | `1` = synthetic-only controls and the demo shortcuts |
@@ -119,7 +121,7 @@ The hosted demo's two parents are dedicated **PayPal sandbox** personal accounts
 
 ```bash
 uv run pytest -q                                          # 170 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
-uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (needs ANTHROPIC_API_KEY): 3 agreements + 1 planted-instruction agreement
+uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (Gemini or Anthropic key; add --workers 1 on a free plan): 3 agreements + 1 planted-instruction agreement
 uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000   # golden path with a real sandbox approval
 uv run python scripts/verify.py --family <id>             # independent check of every payment against PayPal + the record chain
 ```
@@ -134,7 +136,9 @@ Between reuses a few small, tested pieces from the author's earlier project Kitt
 
 ## Built with
 
-- Anthropic Claude: `claude-sonnet-5-5` reads agreements (structured outputs, server-side refusal fallback); `claude-haiku-5-5` reads receipt totals.
+- Google Gemini (hosted demo, free plan): `gemini-3.6-flash` reads agreements, retried on overload, with `gemini-3.5-flash-lite` as the fallback; `gemini-3.5-flash-lite` reads receipt totals. Structured JSON output against the same Pydantic schemas.
+- Anthropic Claude (same code path, used when only `ANTHROPIC_API_KEY` is set): `claude-sonnet-5-5` reads agreements; `claude-haiku-5-5` reads receipts.
+- Whichever model answers, it only proposes: the deterministic validator accepts a rule only if its quote is on the stated page under the stated section, and both parents approve.
 - PayPal: Orders v2 (create, capture, get), Payments v2 (get capture), Webhooks (verify-webhook-signature), sandbox only.
 - FastAPI, SQLAlchemy, Jinja2, pypdf, httpx. Hosting on Render.
 

@@ -110,6 +110,9 @@ def one(key, backend, run):
 
 def _client():
     import anthropic
+    if os.environ.get("GEMINI_API_KEY"):  # same choice as the app
+        from between.gemini import Gemini
+        return Gemini(os.environ["GEMINI_API_KEY"])
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise SystemExit("ANTHROPIC_API_KEY not set (use --backend cli for an interim check)")
     return anthropic.Anthropic()
@@ -119,10 +122,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=1)
     ap.add_argument("--backend", choices=["sdk", "cli"], default="sdk")
+    ap.add_argument("--workers", type=int, default=8, help="1 for free-tier rate limits")
     a = ap.parse_args()
     jobs = [(k, r) for r in range(1, a.runs + 1) for k in (PLAN1, PLAN2, PLAN3, PLAN4)]
     failed = False
-    with cf.ThreadPoolExecutor(max_workers=8) as pool:
+    with cf.ThreadPoolExecutor(max_workers=a.workers) as pool:
         for doc, run, s in pool.map(lambda j: one(j[0], a.backend, j[1]), jobs):
             bad = s.get("missing") or s.get("questions_missed") or s.get("wrong_amounts") or s.get("injection_accepted")
             failed |= bool(bad)

@@ -13,6 +13,7 @@ class Settings:
     paypal_client_secret: str = ""
     paypal_webhook_id: str = ""
     anthropic_api_key: str | None = None
+    gemini_api_key: str | None = None
     secret: str = ""
     base_url: str = "http://127.0.0.1:8000"
     demo_mode: bool = True
@@ -37,6 +38,7 @@ def load(env: Mapping[str, str] = os.environ) -> Settings:
         paypal_client_secret=env.get("PAYPAL_CLIENT_SECRET", ""),
         paypal_webhook_id=env.get("PAYPAL_WEBHOOK_ID", ""),
         anthropic_api_key=env.get("ANTHROPIC_API_KEY") or None,
+        gemini_api_key=env.get("GEMINI_API_KEY") or None,
         secret=env.get("BETWEEN_SECRET", ""),
         base_url=(env.get("BETWEEN_BASE_URL") or Settings.base_url).rstrip("/"),
         demo_mode=_flag(env.get("BETWEEN_DEMO_MODE"), True),

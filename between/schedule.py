@@ -11,6 +11,7 @@ import anthropic
 from pydantic import BaseModel
 
 from between.agreement import label_key, locate
+from between.gemini import GeminiError
 from between.extraction import MODEL_RULES
 
 log = logging.getLogger("between.ai")
@@ -51,7 +52,7 @@ def extract_schedule(text: str, client=None) -> dict | None:
         resp = client.beta.messages.parse(model=MODEL_RULES, max_tokens=2048, system=SYSTEM,
                                           messages=[{"role": "user", "content": f"Agreement:\n\n{text}"}],
                                           output_format=ExtractedSchedule)
-    except anthropic.APIError as exc:
+    except (anthropic.APIError, GeminiError) as exc:
         log.warning("extract_schedule failed: %s", type(exc).__name__)
         return None
     s = resp.parsed_output

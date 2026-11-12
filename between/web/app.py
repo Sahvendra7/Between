@@ -68,7 +68,10 @@ def build_from_env() -> FastAPI:
     engine = db.make_engine(settings.database_url)
     db.init_db(engine)
     ai = pp = None
-    if settings.anthropic_api_key:
+    if settings.gemini_api_key:  # takes precedence: the owner's Anthropic account has no credits
+        from between.gemini import Gemini
+        ai = Gemini(settings.gemini_api_key)
+    elif settings.anthropic_api_key:
         import anthropic
         ai = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     if settings.paypal_client_id and settings.paypal_client_secret:
