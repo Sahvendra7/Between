@@ -35,7 +35,7 @@ def home_context(conn, request, s, invite_url=None):
     other = "B" if s.role == "A" else "A"
     return dict(s=s, fid=s.family_id, parents=parents(conn, s.family_id), rs=rs, approvals=approvals,
                 open_questions=[q for q in (rs or {}).get("questions", [])
-                                if q["id"] not in {r["source"].get("question_id") for r in rs["rules"] if r.get("origin") == "resolution"}] if rs else [],
+                                if q.get("type") != "fee_policy" and q["id"] not in {r["source"].get("question_id") for r in rs["rules"] if r.get("origin") == "resolution"}] if rs else [],
                 invite_url=invite_url, other_joined=other_joined(conn, s.family_id, other),
                 demo_family=request.app.state.settings.demo_mode and demo.is_visitor_family(conn, s.family_id),
                 **family_summary(conn, s))
