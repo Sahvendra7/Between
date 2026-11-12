@@ -1,5 +1,11 @@
 # Build status (evidence)
 
+## Judge-facing polish, hosted (Thu 12 Nov 2026, ~09:00 IST, commit `6282260`)
+- Over HTTP against https://between-vjte.onrender.com (Render Postgres): the rules page's "see it in your agreement" → `200` with the clause highlighted; Mother asks for 2 days in Father's week → "Waiting for Father"; Father agrees → calendar event `swap-agreed`; the vendored calendar script has the drag hook.
+- In a real browser (local): dragging across 17–19 Nov in Father's week as Mother filled and submitted the swap form; Father clicked Agree; the Bryntum calendar shows "With Mother · swap agreed".
+- Keep-warm workflow: manual run `success`; scheduled every 10 minutes.
+- `uv run pytest -q` → 183 passed.
+
 ## AI extraction gate on Gemini (Thu 12 Nov 2026, ~08:00 IST)
 - The owner's Anthropic key has no credits ("credit balance is too low"), so the app uses the owner's free-plan Gemini key.
 - `uv run python scripts/eval_extraction.py --runs 2 --backend sdk --workers 1` → 8/8 ok, `GATE PASS (sdk)`: plans 1–3 match every key rule and raise every expected question; plan 4 (planted instruction) accepted 0 injected rules.
