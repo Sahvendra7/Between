@@ -1,0 +1,268 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss";
+
+/* Between's design tokens: the one source of truth. Colour carries meaning:
+   teal = Parent A, ochre = Parent B, indigo = Between's own actions,
+   green = verified by PayPal, amber = waiting on a person, rose = not shared / refused.
+   Serif type means "these are your agreement's own words"; everything Between says is in sans. */
+:root {
+  color-scheme: light;
+  --paper: #f3f5f7;
+  --surface: #ffffff;
+  --raised: #ffffff;
+  --sunk: #e8ecf0;
+  --ink: #15202b;
+  --ink-2: #4c5a68;
+  --line: rgb(21 32 43 / 0.11);
+  --line-strong: rgb(21 32 43 / 0.24);
+  --act: #2b3a8f;
+  --act-hover: #23307a;
+  --act-ink: #ffffff;
+  --act-wash: #e8ebf8;
+  --a: #2b6b6f;
+  --a-wash: #e1efee;
+  --b: #9c5f22;
+  --b-wash: #f6ebdd;
+  --good: #1b6e4c;
+  --good-wash: #def1e7;
+  --wait: #845600;
+  --wait-wash: #faefd6;
+  --bad: #9e1f3d;
+  --bad-wash: #f8e4e9;
+  --mark: #ffeea0;
+  --focus: #2b3a8f;
+  --shadow: 0 1px 0 rgb(21 32 43 / 0.04), 0 18px 40px -28px rgb(21 32 43 / 0.45);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #0e1216;
+    --surface: #151b21;
+    --raised: #1b232a;
+    --sunk: #0a0d10;
+    --ink: #e7ecf0;
+    --ink-2: #a3afba;
+    --line: rgb(231 236 240 / 0.1);
+    --line-strong: rgb(231 236 240 / 0.24);
+    --act: #a4b1ff;
+    --act-hover: #bcc6ff;
+    --act-ink: #0e1216;
+    --act-wash: #1c2240;
+    --a: #74c6c4;
+    --a-wash: #11302f;
+    --b: #e6ad6c;
+    --b-wash: #392916;
+    --good: #6dd3a4;
+    --good-wash: #10301f;
+    --wait: #f0c56d;
+    --wait-wash: #33270e;
+    --bad: #ff92aa;
+    --bad-wash: #3c1620;
+    --mark: rgb(255 214 90 / 0.28);
+    --focus: #a4b1ff;
+    --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 18px 40px -24px rgb(0 0 0 / 0.8);
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunk: var(--sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-act: var(--act);
+  --color-act-wash: var(--act-wash);
+  --color-pa: var(--a);
+  --color-pa-wash: var(--a-wash);
+  --color-pb: var(--b);
+  --color-pb-wash: var(--b-wash);
+  --color-good: var(--good);
+  --color-good-wash: var(--good-wash);
+  --color-wait: var(--wait);
+  --color-wait-wash: var(--wait-wash);
+  --color-bad: var(--bad);
+  --color-bad-wash: var(--bad-wash);
+  --font-sans: var(--font-anek), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+}
+
+/* Base and component styles sit in a layer so Tailwind utilities on an element always win. */
+@layer components {
+* { box-sizing: border-box; }
+html { background: var(--paper); -webkit-text-size-adjust: 100%; scroll-padding-top: 5rem; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--act); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+::selection { background: var(--act-wash); }
+
+/* Type. Headlines use the width axis: narrow and firm for Between's voice. */
+.display { font-weight: 720; font-stretch: 78%; letter-spacing: -0.015em; line-height: 0.98; text-wrap: balance; }
+.h1 { font-size: clamp(1.85rem, 3.2vw + 1rem, 2.75rem); font-weight: 680; font-stretch: 86%; line-height: 1.06; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
+.h2 { font-size: 1.28rem; font-weight: 640; font-stretch: 92%; line-height: 1.2; margin: 0; }
+.h3 { font-size: 1.06rem; font-weight: 620; margin: 0; }
+.lede { font-size: 1.14rem; color: var(--ink-2); max-width: 62ch; text-wrap: pretty; }
+.muted { color: var(--ink-2); }
+.small { font-size: 0.9rem; }
+.hint { font-size: 0.92rem; color: var(--ink-2); max-width: 70ch; text-wrap: pretty; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.86em; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.serif { font-family: var(--font-serif); }
+
+/* The agreement's own words. A highlighter, not a pull quote. */
+.clause {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  line-height: 1.62;
+  margin: 0;
+  padding: 0.85rem 1rem 0.85rem 1.1rem;
+  background: var(--sunk);
+  border-radius: 4px 12px 12px 4px;
+  box-shadow: inset 3px 0 0 var(--ink-2);
+  text-wrap: pretty;
+}
+.clause mark, mark.clause-mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0.05em 0.15em; box-decoration-break: clone; }
+
+/* Surfaces. Panels are the default container; sheets are larger and quieter. */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: clamp(1rem, 2.4vw, 1.5rem); box-shadow: var(--shadow); }
+.sheet { background: var(--surface); border-radius: 22px; border: 1px solid var(--line); padding: clamp(1.1rem, 3vw, 2rem); }
+.rule-line { border: 0; border-top: 1px solid var(--line); margin: 1.25rem 0; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 44px; padding: 0.6rem 1.1rem; border-radius: 10px;
+  font: inherit; font-weight: 600; font-size: 0.98rem; line-height: 1.2; text-decoration: none; cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.18s var(--ease-out), border-color 0.18s, transform 0.12s var(--ease-out), box-shadow 0.18s;
+}
+.btn:active { transform: translateY(1px) scale(0.99); }
+.btn:disabled { opacity: 0.65; cursor: progress; }
+.btn-primary { background: var(--act); color: var(--act-ink); box-shadow: 0 1px 0 rgb(0 0 0 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.12); }
+.btn-primary:hover { background: var(--act-hover); text-decoration: none; }
+.btn-quiet { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.btn-quiet:hover { border-color: var(--ink-2); text-decoration: none; }
+.btn-plain { background: transparent; color: var(--act); padding-inline: 0.5rem; }
+.btn-plain:hover { background: var(--act-wash); text-decoration: none; }
+.spinner { width: 1em; height: 1em; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Forms */
+.field { display: grid; gap: 0.35rem; font-weight: 560; font-size: 0.97rem; }
+.field > span.help { font-weight: 400; color: var(--ink-2); font-size: 0.88rem; }
+.input, .field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), .field select, .field textarea {
+  width: 100%; min-height: 46px; padding: 0.6rem 0.8rem; border-radius: 10px;
+  border: 1px solid var(--line-strong); background: var(--raised); color: var(--ink);
+  font: inherit; font-weight: 400;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field textarea { min-height: 9rem; font-family: var(--font-serif); line-height: 1.55; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--act); box-shadow: 0 0 0 3px var(--act-wash); }
+.field input[type="file"] { font: inherit; font-weight: 400; font-size: 0.95rem; padding: 0.5rem 0; }
+.field input[type="file"]::file-selector-button { font: inherit; font-weight: 600; margin-right: 0.8rem; padding: 0.55rem 0.9rem; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; }
+.choice { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.75rem 0.9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); cursor: pointer; font-weight: 450; transition: border-color 0.15s, background 0.15s; }
+.choice:has(input:checked) { border-color: var(--act); background: var(--act-wash); }
+.choice input { margin-top: 0.3rem; width: 1.1rem; height: 1.1rem; accent-color: var(--act); flex: none; }
+
+/* Status */
+.pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.22rem 0.65rem; border-radius: 999px; font-size: 0.86rem; font-weight: 600; line-height: 1.35; white-space: nowrap; }
+.pill::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; flex: none; }
+.pill-good { color: var(--good); background: var(--good-wash); }
+.pill-wait { color: var(--wait); background: var(--wait-wash); }
+.pill-bad { color: var(--bad); background: var(--bad-wash); }
+.pill-info { color: var(--act); background: var(--act-wash); }
+.alert { padding: 0.8rem 1rem; border-radius: 10px; font-weight: 500; border: 1px solid transparent; }
+.alert:focus { outline: none; box-shadow: 0 0 0 3px var(--act-wash); }
+.alert-bad { color: var(--bad); background: var(--bad-wash); border-color: color-mix(in oklab, var(--bad) 25%, transparent); }
+.alert-good { color: var(--good); background: var(--good-wash); }
+.alert-wait { color: var(--wait); background: var(--wait-wash); }
+
+/* Parents */
+.who { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 600; }
+.who::before { content: ""; width: 0.6rem; height: 0.6rem; border-radius: 3px; background: var(--who); }
+.who-A { --who: var(--a); }
+.who-B { --who: var(--b); }
+
+/* Facts and tables */
+.facts { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: 0.55rem 1.25rem; margin: 0; }
+.facts dt { color: var(--ink-2); font-size: 0.93rem; }
+.facts dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .facts { grid-template-columns: 1fr; gap: 0.1rem; } .facts dd { margin-bottom: 0.55rem; } }
+.table-wrap { overflow-x: auto; margin-inline: -0.25rem; padding-inline: 0.25rem; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.table th { text-align: left; font-weight: 600; color: var(--ink-2); font-size: 0.85rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.table td { padding: 0.7rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table tbody tr:hover td { background: color-mix(in oklab, var(--sunk) 50%, transparent); }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Rows that are links */
+.row-link { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.75rem 1rem; padding: 0.9rem 1rem; text-decoration: none; color: inherit; border-radius: 12px; transition: background 0.15s; }
+.row-link:hover { background: var(--sunk); text-decoration: none; }
+
+/* Route transitions: a short crossfade, nothing that moves layout. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }
+::view-transition-old(page) { animation: 140ms ease-out both vt-out; }
+::view-transition-new(page) { animation: 220ms var(--ease-out) both vt-in; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* Entrance for a page's first block: once, short. */
+.arrive { animation: arrive 0.5s var(--ease-out) both; }
+@keyframes arrive { from { opacity: 0; transform: translateY(8px); } }
+
+/* Vendored Bryntum calendar sizing */
+.calendar { height: min(72vh, 680px); min-height: 460px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.studio { min-height: 640px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.cal-wait { display: grid; place-items: center; height: 100%; margin: 0; color: var(--ink-2); }
+.calendar > .cal-wait:not(:only-child) { display: none; } /* Bryntum has mounted */
+  .calendar .between-custody { opacity: 0.85; }
+.calendar .between-expense { font-weight: 600; }
+.calendar .between-swap-pending { opacity: 0.6; }
+.calendar .between-pay-window.b-cal-event-wrap { opacity: 0.9; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+@media print {
+  body { background: #fff; color: #000; }
+  .no-print { display: none !important; }
+}
+
+/* The one moment the payment screens move: the verified tick draws itself once. */
+.seal-tick { stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw 0.6s 0.15s var(--ease-out) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .seal-tick { stroke-dashoffset: 0; } }
+
+/* Landing hero: the highlighter sweeps the clause, then the decision settles on top. Once, under a second and a half. */
+.hero-mark { background-image: linear-gradient(var(--mark), var(--mark)); background-repeat: no-repeat; background-size: 0% 100%; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0.05em 0.1em; border-radius: 3px; animation: sweep 0.9s 0.35s var(--ease-out) forwards; }
+@keyframes sweep { to { background-size: 100% 100%; } }
+.hero-card { animation: settle 0.7s 1.05s var(--ease-out) both; }
+@keyframes settle { from { opacity: 0; transform: translateY(18px) scale(0.97); } }
+@media (prefers-reduced-motion: reduce) { .hero-mark { background-size: 100% 100%; } }
+
+.story-stage { animation: stage-in 0.45s var(--ease-out) both; }
+@keyframes stage-in { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
+/* Progress line follows the story's scroll position where the browser supports scroll-driven animations. */
+@supports (animation-timeline: view()) {
+  .story-progress { transform: scaleY(0); animation: grow linear both; animation-timeline: view(); animation-range: entry 40% exit 60%; }
+  @keyframes grow { to { transform: scaleY(1); } }
+}
+@media (prefers-reduced-motion: reduce) { .story-progress { animation: none !important; transform: none !important; } }
+.choice:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+}

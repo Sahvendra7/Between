@@ -72,7 +72,15 @@ def envelope(request: Request, name: str, ctx: dict) -> dict:
     from between.web import present
     data = jsonable_encoder(ctx)
     labels = data.get("labels") or data.get("names") or {r: p.get("label") for r, p in (data.get("parents") or {}).items()}
-    return {"template": name.removesuffix(".html"), "demo_mode": request.app.state.settings.demo_mode,
+    viewer = None
+    with request.app.state.engine.connect() as conn:  # who is signed in, so every screen can say so
+        if s := current_session(request, conn):
+            import sqlalchemy as sa
+            from between import db
+            people = {r.role: r for r in conn.execute(sa.select(db.parent).where(db.parent.c.family_id == s.family_id))}
+            viewer = {"fid": s.family_id, "role": s.role, "names": {r: p.label for r, p in people.items()},
+                      "me": people[s.role].display_name if s.role in people else None}
+    return {"template": name.removesuffix(".html"), "demo_mode": request.app.state.settings.demo_mode, "viewer": viewer,
             "words": {"categories": present.CATEGORY_NAMES, "status": present.STATUS_WORDS, "reason": present.REASON_WORDS},
             "ctx": _annotate(data, labels)}
 

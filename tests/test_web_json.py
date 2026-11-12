@@ -44,3 +44,11 @@ def test_paypal_return_url_follows_only_allowlisted_frontend():
     from webutil import csrf
     b.post(loc + "/pay", data={"csrf": csrf(page), "confirm": "yes", "decision_hash": h}, follow_redirects=False)
     assert calls[-1].startswith(FRONT + "/pay/return")
+
+
+def test_envelope_names_the_signed_in_parent():
+    app, _ = make(ai=fake_ai(PLAN1))
+    a, b, fid = family_with_rules(app, DOC1)
+    v = b.get(f"/f/{fid}/expenses/new", headers=J).json()["viewer"]
+    assert v == {"fid": fid, "role": "B", "names": {"A": "Mother", "B": "Father"}, "me": "David"}
+    assert TestClient(app).get("/join/nope", headers=J).json()["viewer"] is None
