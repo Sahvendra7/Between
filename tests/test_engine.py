@@ -164,3 +164,18 @@ def test_p3_daycare_over_300_literal_reading_needs_consent():
     out = E.evaluate(rs, ok, exp("childcare", 60000, by="B"), consents=[consent("childcare", 60000, "A", "2026-01-01")])
     assert (out["owed_by"], out["amount_minor"], out["due_on"]) == ("A", 30000, "2026-10-15")
     assert E.evaluate(rs, ok, exp("school_supplies", 4000))["reason"] == "not_shared"
+
+
+FEE_PAYER = {"id": "R90", "origin": "resolution", "kind": "fee_policy", "category": "*", "params": {"payer_adds": True},
+             "source": {"question_id": "q_fee", "answered_by": ["A", "B"], "answered_at": "2026-10-01T00:00:00+00:00"}}
+
+
+def test_fee_resolution_adds_estimate():
+    rs, ok = approved(PLAN1, [FEE_PAYER])
+    d = E.evaluate(rs, ok, exp("medical", 42000))
+    assert d["amount_minor"] == 26128 and {"fee_added_estimate": 928} in d["notes"] and {"resolution": "R90"} in d["cite"]
+
+
+def test_receiver_bears_fee_changes_nothing():
+    rs, ok = approved(PLAN1, [{**FEE_PAYER, "params": {"payer_adds": False}}])
+    assert E.evaluate(rs, ok, exp("medical", 42000))["amount_minor"] == 25200

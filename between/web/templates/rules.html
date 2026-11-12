@@ -23,7 +23,7 @@
   {% for item in questions %}{% set q = item.q %}
   <article class="question card">
     <p class="q">{{ q.question }}</p>
-    <p class="cite">Page {{ q.source.page }} · {{ q.source.section }}</p>
+    <p class="cite">{% if q.source.page %}Page {{ q.source.page }} · {% endif %}{{ q.source.section }}</p>
     {% if item.resolved_by %}
       <p class="pill good">Settled: Resolution {{ item.resolved_by }}</p>
     {% elif item.answers.both_answered %}

@@ -33,6 +33,9 @@ def describe_rule(rule: dict, labels: dict[str, str]) -> str:
         return f"{cat}: pay your share within {p['days']} days of a complete request"
     if k == "not_shared":
         return f"{cat}: not shared; each parent pays their own"
+    if k == "fee_policy":
+        return ("Payments: the paying parent adds PayPal's estimated fee" if p.get("payer_adds")
+                else "Payments: the receiving parent bears PayPal's fee")
     if k == "receipt_required":
         return f"{cat}: include a receipt"
     return f"{cat}: {k}"

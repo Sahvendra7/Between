@@ -6,7 +6,7 @@
 <section class="card decision">
   <dl class="facts">
     <dt>For</dt><dd>{{ category_name(e.category) }} · {{ e.amount_minor|usd }} paid by {{ names[e.paid_by] }} on {{ e.incurred_on }}</dd>
-    <dt>Your share</dt><dd>{{ d.amount_minor|usd }}{% if d.due_on %} · due {{ d.due_on }}{% endif %}</dd>
+    <dt>Your share</dt><dd>{{ d.amount_minor|usd }}{% if d.due_on %} · due {{ d.due_on }}{% endif %}{% for n in d.notes or [] %}{% if n.fee_added_estimate %} · includes {{ n.fee_added_estimate|usd }} estimated PayPal fee{% endif %}{% endfor %}</dd>
     <dt>Goes to</dt><dd>{{ payee.display_name }} ({{ payee.label }}), their own PayPal account</dd>
     <dt>Because</dt><dd>{% for c in cites %}{{ c.label }}{% if not loop.last %}; {% endif %}{% endfor %}</dd>
   </dl>

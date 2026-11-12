@@ -40,9 +40,17 @@ def _latest_version(conn, family_id) -> int:
     return conn.execute(sa.select(sa.func.max(db.ruleset.c.version)).where(db.ruleset.c.family_id == family_id)).scalar() or 0
 
 
+FEE_QUESTION = {"id": "q_fee", "type": "fee_policy", "affects": "fee_policy", "category": "*",
+                "question": "PayPal charges the receiving parent a fee on each payment. Who should cover it?",
+                "source": {"page": None, "section": "Between setting (not in your agreement)"}}
+
+
 def create_version(conn, family_id: str, agreement_id: str, validated: dict, parties: dict, actor, now=None) -> dict:
     now = _now(now)
-    doc = {"parties": parties, "rules": validated["rules"], "questions": validated.get("questions", []),
+    questions = list(validated.get("questions", []))
+    if not any(q.get("id") == FEE_QUESTION["id"] for q in questions):
+        questions.append(dict(FEE_QUESTION))
+    doc = {"parties": parties, "rules": validated["rules"], "questions": questions,
            "refused": validated.get("refused", [])}
     h = ruleset_hash(doc)
     rid, version = uuid.uuid4().hex[:12], _latest_version(conn, family_id) + 1
@@ -80,6 +88,11 @@ def options_for(question: dict, rules: list[dict]) -> list[dict]:
     """Deterministic answer choices per question type. The AI never writes options."""
     opts = []
     kind, cat = question.get("affects"), question.get("category")
+    if question.get("type") == "fee_policy":
+        return [{"choice": c, "label": label, "makes_rule": {"kind": "fee_policy", "category": "*", "params": {"payer_adds": adds}},
+                 "needs_value": False}
+                for c, label, adds in (("receiver", "The receiving parent bears PayPal's fee", False),
+                                       ("payer", "The paying parent adds the estimated fee", True))]
     if question.get("type") == "contradiction":
         for i, (params, src) in enumerate(zip(question.get("conflict_params", []), question.get("conflict_sources", []))):
             opts.append({"choice": f"use_{i}", "label": f"Use {src.get('section')} (page {src.get('page')})",

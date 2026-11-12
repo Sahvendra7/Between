@@ -147,3 +147,15 @@ def test_events_record_versions_and_approvals(conn, now):
     RS.approve(conn, v1["id"], "A", v1["hash"], A, now=now)
     types = [e["type"] for e in record.events(conn, "f1")]
     assert types == ["ruleset.created", "ruleset.approved"] and record.check(conn, "f1") is None
+
+
+def test_fee_question_is_standing_and_resolves(conn, now):
+    v = setup(conn, now)
+    q = next(q for q in v["json"]["questions"] if q["id"] == "q_fee")
+    assert [o["choice"] for o in RS.options_for(q, v["json"]["rules"])] == ["receiver", "payer"]
+    for role, who in (("A", A), ("B", B)):
+        RS.submit_answer(conn, v["id"], "q_fee", role, "payer", None, who, now=now)
+    v2 = RS.resolve_if_agreed(conn, "f1", v["id"], A, now=now)
+    fee = next(r for r in v2["json"]["rules"] if r["kind"] == "fee_policy")
+    assert fee["params"] == {"payer_adds": True} and fee["origin"] == "resolution"
+    assert [q["id"] for q in v2["json"]["questions"]].count("q_fee") == 1

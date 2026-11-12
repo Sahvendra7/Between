@@ -10,7 +10,7 @@ import json
 from collections.abc import Sequence
 from datetime import date
 
-from between.money import split_amount
+from between.money import fee_estimate, split_amount
 
 PARTIES = ("A", "B")
 BLOCKING = {"split", "not_shared", "covers_first", "annual_cap", "consent_required"}
@@ -73,6 +73,8 @@ def evaluate(ruleset: dict, approvals: dict[str, str], expense: dict,
     if (r := _find(rules, "not_shared", cat)) and r["category"] == cat:
         return {"status": "rejected", "reason": "not_shared", "cite": [_cite(r)]}
     for q in ruleset.get("questions", []):
+        if q.get("type") == "fee_policy":  # a Between setting, not an unclear clause
+            continue
         if q.get("category") in (cat, "*") and q.get("id") not in resolved:
             if q.get("affects") in BLOCKING:
                 return {"status": "needs_parents", "reason": "open_question", "question": q.get("question"),
@@ -119,6 +121,10 @@ def evaluate(ruleset: dict, approvals: dict[str, str], expense: dict,
     due = None
     if r := _find(rules, "payment_deadline_days", cat):
         due = date.fromordinal(requested.toordinal() + r["params"]["days"]).isoformat()
+        cites.append(_cite(r))
+    if (r := _find(rules, "fee_policy", "*")) and r["params"].get("payer_adds") and owed > 0:
+        notes.append({"fee_added_estimate": fee_estimate(owed)})
+        owed += notes[-1]["fee_added_estimate"]
         cites.append(_cite(r))
     out = {"status": "payable", "owed_by": other, "owed_to": payer, "amount_minor": owed,
            "due_on": due, "cite": cites, "notes": notes}

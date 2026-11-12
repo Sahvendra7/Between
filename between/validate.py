@@ -95,6 +95,8 @@ def check_resolution(rule: dict, questions: list[dict]) -> str | None:
         return "not_agreed_by_both"
     if rule.get("category") != q.get("category") and q.get("category") != "*":
         return "category_mismatch"
+    if rule.get("kind") == "fee_policy":
+        return None if rule.get("params") in ({"payer_adds": True}, {"payer_adds": False}) else "bad_params"
     return _check_shape(rule)
 
 

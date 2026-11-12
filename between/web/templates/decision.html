@@ -21,6 +21,7 @@
     {% for n in d.notes or [] %}
       {% if n.capped_from %}<p class="hint">Capped by the annual limit (would have been {{ n.capped_from|usd }}).</p>{% endif %}
       {% if n.emergency %}<p class="hint">Emergency: tell the other parent within {{ n.notify_within_hours }} hours.</p>{% endif %}
+      {% if n.fee_added_estimate %}<p class="hint">Includes {{ n.fee_added_estimate|usd }} for PayPal's fee (estimate), as you both agreed. The actual fee comes from PayPal after payment.</p>{% endif %}
       {% if n.unchecked %}<p class="hint">One deadline in your agreement has no number, so it wasn't checked.</p>{% endif %}
     {% endfor %}
   {% else %}
