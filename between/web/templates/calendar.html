@@ -23,7 +23,35 @@
     <p class="hint">{% if sched.anchor_date %}Set {% if sched.set_by %}by {{ names.get(sched.set_by, "the demo") }}{% else %}for the demo{% endif %}: week starting {{ sched.anchor_date }} with {{ names[sched.first_parent] }}.{% else %}The agreement doesn't say who has which week, so tell Between once.{% endif %}</p>
   </section>
 {% endif %}
-<div id="cal" class="calendar" data-src="/f/{{ fid }}/calendar.json" aria-label="Parenting time and expenses calendar"></div>
-<p class="hint">Read-only. Calendar by Bryntum Calendar Community (MIT).</p>
+{% if sched and sched.anchor_date %}
+<section class="card">
+  <h2>Swap days</h2>
+  <p class="hint">Drag across days in {{ names["B" if s.role == "A" else "A"] }}'s time on the calendar to ask for them, or choose dates here.
+    {{ names["B" if s.role == "A" else "A"] }} agrees or declines. An agreed swap is an arrangement between you; it doesn't change your parenting plan.</p>
+  <form id="swap-form" method="post" action="/f/{{ fid }}/calendar/swaps" class="row mt">{{ csrf(s) }}
+    <label>From <input type="date" name="start" min="{{ today }}" required></label>
+    <label>Until (not including) <input type="date" name="end" min="{{ today }}" required></label>
+    <button>Ask for these days</button>
+  </form>
+  {% if swaps %}
+  <ul class="list mt">
+    {% for w in swaps %}{% set other = "B" if w.requested_by == "A" else "A" %}
+    <li><span>{{ names[w.requested_by] }} · {{ w.start_date }} to {{ w.end_date }} (not including)</span>
+      {% if w.status == "accepted" %}<span class="pill good">Agreed by {{ names[other] }}</span>
+      {% elif s.role == other %}
+        <span class="row"><form method="post" action="/f/{{ fid }}/calendar/swaps/{{ w.id }}/accept" class="inline">{{ csrf(s) }}<button class="primary">Agree</button></form>
+        <form method="post" action="/f/{{ fid }}/calendar/swaps/{{ w.id }}/decline" class="inline">{{ csrf(s) }}<button>Decline</button></form></span>
+      {% else %}
+        <span class="row"><span class="pill wait">Waiting for {{ names[other] }}</span>
+        <form method="post" action="/f/{{ fid }}/calendar/swaps/{{ w.id }}/cancel" class="inline">{{ csrf(s) }}<button>Withdraw</button></form></span>
+      {% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
+<div id="cal" class="calendar" data-src="/f/{{ fid }}/calendar.json" data-swaps="{{ 'yes' if sched and sched.anchor_date else '' }}"
+     data-other="{{ names['B' if s.role == 'A' else 'A'] }}" aria-label="Parenting time and expenses calendar"></div>
+<p class="hint">Calendar by Bryntum Calendar Community (MIT).</p>
 <script type="module" src="/static/calendar.js"></script>
 {% endblock %}

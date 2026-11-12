@@ -115,3 +115,9 @@ pre.agreement mark { background: var(--wait-wash); color: var(--ink); box-shadow
 table.balance { width: 100%; border-collapse: collapse; margin: .5rem 0; }
 table.balance th, table.balance td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--rule); }
 table.balance th[scope="row"], table.balance thead th:first-child { text-align: left; font-weight: 500; }
+
+/* Swap requests on the Bryntum calendar */
+#cal .b-cal-event-wrap.between-swap-pending .b-cal-event { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255,255,255,.28) 6px 12px); }
+#cal .b-cal-event-wrap.between-swap-agreed .b-cal-event { box-shadow: inset 0 0 0 2px var(--good); font-weight: 600; }
+.pill { white-space: nowrap; }
+#swap-form button { align-self: end; white-space: nowrap; }

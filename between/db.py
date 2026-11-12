@@ -158,6 +158,20 @@ schedule = Table(
     Column("at", TS, nullable=False),
 )
 
+# A parent asks for days in the other parent's time; only the other parent can agree. A working arrangement
+# between them: it doesn't change the parenting plan. end_date is exclusive.
+swap = Table(
+    "swap", metadata,
+    Column("id", String, primary_key=True),
+    Column("family_id", String, sa.ForeignKey("family.id"), nullable=False),
+    Column("requested_by", String, nullable=False),
+    Column("start_date", String, nullable=False),
+    Column("end_date", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("decided_by", String),
+    Column("at", TS, nullable=False),
+)
+
 # Demo mode only: the AI's raw reading of an identical synthetic agreement, reused so repeated sample
 # uploads don't spend the free-plan model quota. Output is still validated and approved like any other.
 ai_cache = Table(
