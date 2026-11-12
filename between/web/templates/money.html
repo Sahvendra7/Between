@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 {% from "base.html" import csrf %}
 {% block title %}Money &amp; Time · Between{% endblock %}
-{% block head %}<script src="{{ studio_src }}" integrity="{{ studio_sri }}" crossorigin="anonymous" defer></script>{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/fontawesome/css/fontawesome.min.css">
+<link rel="stylesheet" href="/static/vendor/fontawesome/css/solid.min.css">
+<link rel="stylesheet" href="/static/vendor/bryntum/calendar.css">
+<link rel="stylesheet" href="/static/vendor/bryntum/svalbard-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="/static/vendor/bryntum/svalbard-dark.css" media="(prefers-color-scheme: dark)">
+<script src="{{ studio_src }}" integrity="{{ studio_sri }}" crossorigin="anonymous" defer></script>
+{% endblock %}
 {% block main %}
 <h1>Money &amp; Time</h1>
 <p class="lede">What your agreement means over the year: what each of you paid, what's due and by when, how much of a cap is left, and which clause says so.</p>
@@ -14,7 +21,9 @@
     <form method="post" action="/f/{{ fid }}/money/sample-year">{{ csrf(s) }}<button class="primary">Add a sample year (synthetic)</button></form>
   </section>
   {% endif %}
-  <div class="studio-bar"><button type="button" id="studio-mode" hidden>Edit report</button></div>
+  <div id="cal" class="calendar money-cal" aria-label="Parenting time, expenses and payment windows"></div>
+  <p class="hint">Bars show each payment window, from the day it was asked for to the day it's due under your agreement. Click an expense or a window to focus the report on it.</p>
+  <div class="studio-bar"><button type="button" id="studio-clear" hidden>Show the whole year</button><button type="button" id="studio-mode" hidden>Edit report</button></div>
   <div id="studio" class="studio" data-src="/f/{{ fid }}/money.json" data-license="{{ license }}" aria-label="Your year: report and ledger"></div>
   <section class="card" id="ledger-fallback">
     <h2>Ledger</h2>
@@ -27,7 +36,7 @@
     </table></div>
     {% else %}<p>No expenses yet. <a href="/f/{{ fid }}/expenses/new">Add your first expense</a>.</p>{% endif %}
   </section>
-  <p class="hint">Report by AG Studio (AG Grid), loaded from jsDelivr. Amounts come from Between's rules engine and PayPal; nothing here is computed by AI.</p>
+  <p class="hint">Calendar by Bryntum Calendar Community (MIT). Report by AG Studio (AG Grid), loaded from jsDelivr. Amounts come from Between's rules engine and PayPal; nothing here is computed by AI.</p>
   <script type="module" src="/static/money.js"></script>
 {% endif %}
 {% endblock %}

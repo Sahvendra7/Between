@@ -85,6 +85,42 @@ async function initialReport() {
   }
 }
 
+// ---- Bryntum: parenting time, expenses and payment windows on one read-only calendar ----------------------
+const { Calendar } = await import('/static/vendor/bryntum/calendar.bundle.js');
+const calEl = document.getElementById('cal');
+const [y, m, d] = feed.calendar.today.split('-').map(Number);
+const calendar = new Calendar({
+  appendTo: calEl, mode: 'month', date: new Date(y, m - 1, d), readOnly: true, autoCreate: false,
+  features: { drag: false, eventEdit: false, eventMenu: false, scheduleMenu: false },
+  modes: { day: null, year: null },
+  resources: feed.calendar.resources,
+  events: feed.calendar.events.map(({ kind, state, ...e }) => ({
+    ...e, cls: kind === 'pay-window' ? `between-pay-${state}` : `between-${kind}` })),
+  listeners: {
+    eventClick({ eventRecord }) {
+      const id = eventRecord.get('expenseId');
+      if (id) window.betweenMoney?.filterExpense(id);
+    },
+  },
+});
+
+function show(date, eventId) {
+  const [yy, mm, dd] = date.split('-').map(Number);
+  calendar.date = new Date(yy, mm - 1, dd);
+  const rec = eventId && calendar.eventStore.getById(eventId);
+  if (rec) {
+    const base = rec.cls?.toString() ?? '';
+    rec.cls = `${base} between-focus`;
+    setTimeout(() => { rec.cls = base; }, 4000);
+  }
+  calEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+window.addEventListener('hashchange', () => {
+  const m2 = location.hash.match(/^#cal=(\d{4}-\d{2}-\d{2})$/);
+  if (m2) show(m2[1]);
+});
+
+// ---- AG Studio: the year as a report ---------------------------------------------------------------------
 if (S && feed.expenses.length) {
   if (studioEl.dataset.license) S.AgStudioLicenseManager.setLicenseKey(studioEl.dataset.license);
   // Literal values: charts draw on canvas and can't resolve CSS variables. A light report card in both colour schemes.
@@ -101,5 +137,17 @@ if (S && feed.expenses.length) {
     api.setProperty('mode', editing ? 'view' : 'edit');
     toggle.textContent = editing ? 'Edit report' : 'Done';
   });
-  window.betweenMoney = { studio: api, feed };
+  const clear = document.getElementById('studio-clear');
+  // Calendar → report: focus every widget on one expense (and its windows, payments and clauses).
+  function filterExpense(expenseId) {
+    const st = api.getState();
+    const page = expenseId ? [{ field: { id: 'expenses.id' }, model: { operator: 'isIn', value: [expenseId] } }] : [];
+    api.setState({ ...st, pages: st.pages.map((p) => (p.id === st.selectedPageId ? { ...p, filter: { ...p.filter, page } } : p)) });
+    clear.hidden = !expenseId;
+    if (expenseId) studioEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  clear.addEventListener('click', () => filterExpense(null));
+  window.betweenMoney = { studio: api, calendar, feed, show, filterExpense };
+} else {
+  window.betweenMoney = { calendar, feed, show, filterExpense() {} };
 }

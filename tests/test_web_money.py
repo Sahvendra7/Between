@@ -145,3 +145,52 @@ def test_money_page_other_family_403():
 def test_nav_links_money_and_time():
     app, engine, c, fid = approved_demo()
     assert f'href="/f/{fid}/money">Money &amp; Time</a>' in c.get(f"/f/{fid}").text
+
+
+def counts_all(engine):
+    with engine.connect() as conn:
+        return {t.name: conn.execute(sa.select(sa.func.count()).select_from(t)).scalar()
+                for t in (db.expense, db.decision, db.consent, db.payment, db.event)}
+
+
+def preview(c, fid, body, token=True, token_fid=None):
+    headers = {"X-CSRF-Token": csrf(c.get(f"/f/{token_fid or fid}/expenses/new").text)} if token else {}
+    return c.post(f"/f/{fid}/money/preview", json=body, headers=headers)
+
+
+def test_money_json_has_pay_windows_and_custody():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    cal = c.get(f"/f/{fid}/money.json").json()["calendar"]
+    kinds = {e["kind"] for e in cal["events"]}
+    assert {"custody", "expense", "pay-window"} <= kinds and {r["id"] for r in cal["resources"]} == {"A", "B"}
+    [w] = [e for e in cal["events"] if e["kind"] == "pay-window" and e["state"] == "open"]
+    assert w["resourceId"] == "B" and "§7.2" in w["name"] and w["expenseId"]
+
+
+def test_preview_needs_consent_and_writes_nothing():
+    app, engine, c, fid = approved_demo()
+    before = counts_all(engine)
+    r = preview(c, fid, {"category": "extracurricular", "amountMinor": 45000, "incurredOn": "2026-12-14", "paidBy": "A"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["status"] == "needs_consent" and d["cite"][0]["section"] == "6.2" and d["cite"][0]["quote"]
+    assert counts_all(engine) == before
+
+
+def test_preview_medical_share():
+    app, engine, c, fid = approved_demo()
+    d = preview(c, fid, {"category": "medical", "amountMinor": 42000, "incurredOn": "2026-11-12", "paidBy": "A"}).json()
+    assert (d["status"], d["owedBy"], d["owedTo"], d["amountMinor"]) == ("payable", "B", "A", 25200)
+    assert d["dueOn"] == "2026-11-26" and {x["section"] for x in d["cite"]} >= {"6.1", "7.2"}
+
+
+def test_preview_rejects_bad_input_and_csrf():
+    app, engine, c, fid = approved_demo()
+    good = {"category": "medical", "amountMinor": 1000, "incurredOn": "2026-11-12", "paidBy": "A"}
+    for bad in ({**good, "category": "rent"}, {**good, "amountMinor": 0}, {**good, "amountMinor": "10"},
+                {**good, "incurredOn": "12/11/2026"}, {**good, "paidBy": "C"}):
+        assert preview(c, fid, bad).status_code == 400, bad
+    assert preview(c, fid, good, token=False).status_code == 403
+    _, _, c2, fid2 = approved_demo(app, engine)
+    assert preview(c2, fid, good, token_fid=fid2).status_code == 403

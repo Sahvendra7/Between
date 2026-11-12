@@ -127,3 +127,11 @@ table.balance th[scope="row"], table.balance thead th:first-child { text-align: 
 main.has-studio #ledger-fallback{display:none}
 main:not(.has-studio) .studio{display:none}
 @media (max-width:600px){.studio{height:720px}}
+.money-cal{height:470px}
+.studio-bar{gap:.5rem}
+#cal .b-cal-event-wrap.between-pay-open .b-cal-event{background:var(--wait-wash);color:var(--wait);box-shadow:inset 0 0 0 1px var(--wait)}
+#cal .b-cal-event-wrap.between-pay-overdue .b-cal-event{background:var(--bad-wash);color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+#cal .b-cal-event-wrap.between-pay-verified .b-cal-event{background:var(--good-wash);color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
+#cal .b-cal-event-wrap.between-pay-outside .b-cal-event{background:var(--sunk);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule-strong)}
+#cal .b-cal-event-wrap.between-focus .b-cal-event{outline:3px solid var(--focus);outline-offset:1px}
+[hidden]{display:none !important}

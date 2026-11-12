@@ -1,12 +1,18 @@
 """Money & Time: the family's year on one screen (AG Studio report + Bryntum calendar), from one authorised feed."""
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from between import demo, engine as E, ruleset as RS
+from between import access, demo, engine as E, ruleset as RS
+from between.money import fmt_usd
 from between.web.deps import checked_form, get_conn, now, render, require_family
 from between.web.ledger import family_feed
+from between.web.present import EXPENSE_CATEGORIES
+from between.web.routes_calendar import calendar_data
+from between.web.routes_expenses import _consents, _history
 
 router = APIRouter()
 
@@ -35,7 +41,48 @@ def money_page(request: Request, fid: str, conn=Depends(get_conn)):
 @router.get("/f/{fid}/money.json")
 def money_json(request: Request, fid: str, conn=Depends(get_conn)):
     s = require_family(request, conn, fid)
-    return family_feed(conn, s, now().date())
+    feed = family_feed(conn, s, now().date())
+    cal, names = calendar_data(conn, s), feed["names"]
+    for o in feed["obligations"]:
+        if o["kind"] == "pay-window":  # endDate is exclusive in Bryntum: the due day stays inside the bar
+            end = (date.fromisoformat(o["end"]) + timedelta(days=1)).isoformat()
+            cal["events"].append({
+                "id": o["id"], "kind": "pay-window", "state": o["state"], "expenseId": o["expenseId"], "allDay": True,
+                "startDate": o["start"], "endDate": end, "resourceId": o["owedBy"],
+                "name": f"{names[o['owedBy']]} → {names[o['owedTo']]} {fmt_usd(o['amountMinor'])} · due {o['end']}"
+                        f"{' · ' + o['clause'] if o['clause'] else ''} · {PAY_STATE[o['state']]}"})
+    return {**feed, "calendar": cal}
+
+
+PAY_STATE = {"open": "open", "overdue": "overdue", "verified": "verified with PayPal",
+             "outside": "settled outside Between"}
+
+
+@router.post("/f/{fid}/money/preview")
+async def preview_expense(request: Request, fid: str, conn=Depends(get_conn)):
+    """What the rules engine would decide for a hypothetical expense. Read-only: nothing is stored."""
+    s = require_family(request, conn, fid)
+    if not access.check_csrf(s, request.headers.get("x-csrf-token")):
+        raise HTTPException(status_code=403, detail="Reload the page and try again.")
+    try:
+        body = await request.json()
+        cat, amount, paid_by = body["category"], body["amountMinor"], body["paidBy"]
+        incurred = date.fromisoformat(body["incurredOn"]).isoformat()
+        if cat not in EXPENSE_CATEGORIES or type(amount) is not int or amount <= 0 or paid_by not in ("A", "B"):
+            raise ValueError
+    except (KeyError, ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Give a category, a whole number of cents, a date and who pays.") from None
+    rs, approvals = RS.current(conn, fid)
+    if not rs:
+        return {"status": "refused", "reason": "no_rules", "cite": []}
+    exp = {"id": "preview", "category": cat, "amount_minor": amount, "paid_by": paid_by, "incurred_on": incurred,
+           "requested_on": incurred, "receipt": True, "emergency": False}
+    d = E.evaluate(rs, approvals, exp, _consents(conn, fid), _history(conn, fid, ""))
+    rules = {r["id"]: r for r in rs["rules"]}
+    cite = [{"section": rules[c["rule"]]["source"]["section"], "page": rules[c["rule"]]["source"]["page"],
+             "quote": rules[c["rule"]]["source"]["quote"]} for c in d.get("cite", []) if c.get("rule") in rules]
+    return {"status": d["status"], "reason": d.get("reason"), "owedBy": d.get("owed_by"), "owedTo": d.get("owed_to"),
+            "amountMinor": d.get("amount_minor"), "dueOn": d.get("due_on"), "notes": d.get("notes", []), "cite": cite}
 
 
 @router.post("/f/{fid}/money/sample-year")

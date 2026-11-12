@@ -103,6 +103,12 @@ async def decide_swap(request: Request, fid: str, sid: str, verb: str, conn=Depe
 @router.get("/f/{fid}/calendar.json")
 def calendar_json(request: Request, fid: str, conn=Depends(get_conn)):
     s = require_family(request, conn, fid)
+    return calendar_data(conn, s)
+
+
+def calendar_data(conn, s) -> dict:
+    """Custody blocks, swaps and expenses for one family, in Bryntum's shape. Shared with Money & Time."""
+    fid = s.family_id
     names, sched, t = labels(conn, fid), _schedule(conn, fid), _local_now()
     events = []
     if sched:
@@ -116,7 +122,7 @@ def calendar_json(request: Request, fid: str, conn=Depends(get_conn)):
                        "allDay": True, "startDate": w["start_date"], "endDate": w["end_date"],
                        "resourceId": w["requested_by"], "name": name})
     for e in family_summary(conn, s)["expenses"]:
-        events.append({"id": f"e{e['id']}", "kind": "expense", "allDay": True, "startDate": e["incurred_on"],
+        events.append({"id": f"e{e['id']}", "kind": "expense", "expenseId": e["id"], "allDay": True, "startDate": e["incurred_on"],
                        "endDate": e["incurred_on"], "resourceId": e["paid_by"],
                        "name": f"{category_name(e['category'])} {fmt_usd(e['amount_minor'])} · {e['label']}"})
     return {"now": t.isoformat(timespec="seconds"), "today": t.date().isoformat(),
