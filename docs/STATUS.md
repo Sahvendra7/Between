@@ -1,5 +1,20 @@
 # Build status (evidence)
 
+## Real sandbox run through the hosted app (Thu 12 Nov 2026, ~07:12 IST)
+- Host: https://between-vjte.onrender.com (Render free web service + Render Postgres 16, Singapore), commit `3f3d350`.
+- `uv run python scripts/e2e_sandbox.py --base-url https://between-vjte.onrender.com`:
+  ```
+  · demo family 6c261a79978f
+  · rules approved by both parents
+  · expense decided: $252.00, Father owes Mother (§6.1, §7.2)
+  (Father's sandbox account approved the checkout on sandbox.paypal.com)
+  · capture 17S84040MG287540N; record intact
+  E2E PASS
+  ```
+- Read back independently from PayPal (`GET /v2/payments/captures/17S84040MG287540N`): `COMPLETED 252.00`, custom_id `exp_9432100bc6bf`, payee = Mother's sandbox account, fee 9.28, net 242.72.
+- The browser that approved wasn't the script's session, so `/pay/return` correctly refused it (403); the payment completed through the PayPal read-back, as designed.
+- PayPal sandbox webhook `9G731210DN4850140` delivered to `/webhooks/paypal`: `200 OK` at 01:42:29 UTC.
+
 ## Real sandbox run through the app, local (Wed 11 Nov 2026, ~04:00 IST)
 - App: `uv run uvicorn between.web.app:app` on 127.0.0.1:8000, SQLite, `BETWEEN_DEMO_MODE=1`, no Anthropic key.
 - Flow: "Try a demo family" → both parents approve 11 rules → Mother submits medical $420.00 (synthetic receipt, amount confirmed by hand because no AI key) → decision "$252.00, Father owes Mother, due 2026-11-24" citing §6.1 (p.2) and §7.2 (p.3) → Father confirms → PayPal sandbox checkout (Parent B approves) → Between captures and verifies.

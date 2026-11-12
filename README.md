@@ -4,6 +4,8 @@
 
 Built for the PayPal AI Hackathon 2026. **Sandbox demonstration with synthetic data. Not legal advice.**
 
+**Live demo:** https://between-vjte.onrender.com (Render free plan: the first visit after a quiet spell takes 30–60 seconds to wake up).
+
 ---
 
 ## What and why
@@ -124,7 +126,7 @@ uv run python scripts/verify.py --family <id>             # independent check of
 
 ## Hosting (Render)
 
-`render.yaml` defines one web service and a Render Postgres database. **Free Render Postgres expires 30 days after creation** (`render.com/docs/free`). Before that date, either upgrade the database or point `DATABASE_URL` at a new one. On start, the app re-creates the base demo family if it's missing; it never overwrites or deletes data.
+`render.yaml` defines one web service and a Render Postgres database. **Free Render Postgres expires 30 days after creation** (`render.com/docs/free`). The hosted database expires on **12 Dec 2026**. Before that date, either upgrade the database or point `DATABASE_URL` at a new one. On start, the app re-creates the base demo family if it's missing; it never overwrites or deletes data.
 
 ## What came from Kitty
 
