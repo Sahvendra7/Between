@@ -70,6 +70,15 @@ test("demo: rules, receipt upload, decision, PayPal hand-off, record, Money & Ti
   await page.goto(`/f/${fid}`);
   await expect(page.getByRole("link", { name: /waiting for payment through PayPal/ })).toHaveAttribute("href", new URL(expenseUrl).pathname);
   await expect(page.getByRole("link", { name: /See the year in Money & Time/ })).toBeVisible();
+  // Judge Mode: read-only, shows the family's real state, keeps its place
+  await page.getByRole("button", { name: "Start the walkthrough" }).click();
+  await expect(page.locator("blockquote.clause")).toBeVisible();
+  for (let n = 0; n < 3; n++) await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByText("0 payments verified with PayPal (sandbox)")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Step 4 of 5")).toBeVisible();
+  await page.getByRole("button", { name: "Exit" }).click();
+  await expect(page.getByText("Step 4 of 5")).toBeHidden();
   await page.goto(expenseUrl);
 
   // the clause link opens the agreement with the quote highlighted

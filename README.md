@@ -23,7 +23,7 @@ Between does three things, in this order:
 
 ## 60-second tour
 
-1. Open https://between-app-iota.vercel.app, click **Try the demo**, then **Open a demo family**. You get a synthetic family with a sample agreement (`samples/agreements/plan1_rivera_okafor.txt`) and 11 proposed rules.
+1. Open https://between-app-iota.vercel.app, click **Try the demo**, then **Open a demo family**. On the home page, **Judge Mode: follow the proof** is a read-only, five-step walkthrough of this family's own data (agreement → approval → expense → payment → record). You get a synthetic family with a sample agreement (`samples/agreements/plan1_rivera_okafor.txt`) and 11 proposed rules.
 2. **Rules.** Each rule shows its quote, page and section; **see it in your agreement** opens the uploaded text with that exact clause highlighted. Click **I approve these 11 rules**, then **Switch to Father** (a demo shortcut) and approve again.
 3. **New expense.** Choose medical, attach `samples/receipts/ortho_420.png`, and confirm $420.00. The decision: **$252.00, Father owes Mother, due in 14 days**, citing §6.1 (p. 2) and §7.2 (p. 3).
 4. **Switch to Father → Pay $252.00 with PayPal.** Confirm, approve in the PayPal sandbox as the Father's sandbox account (see *Judge sandbox accounts*), and come back to **Verified with PayPal**: paid $252.00, PayPal fee $9.28, received $242.72 (fee and received amount as reported by PayPal). The home page's next-step list points to each of these steps in turn.

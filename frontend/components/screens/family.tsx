@@ -4,7 +4,7 @@ import { ArrowRight, Check, Clock, FileUp, MessageCircleQuestion, Plus, Repeat2 
 import type { Envelope } from "@/lib/types";
 import { other, usd } from "@/lib/format";
 import { BackendForm, Submit } from "../backend-form";
-import { CopyField } from "../client-bits";
+import { CopyField, ProofTour, type ProofStep } from "../client-bits";
 import { Empty, PageHead, Pill, Section, Who } from "../ui";
 
 type P = { env: Envelope };
@@ -108,6 +108,48 @@ function Balance({ env }: P) {
   );
 }
 
+/** Judge Mode steps. Every fact comes from the backend's own home data; nothing is calculated or invented here. */
+function proofSteps(env: Envelope): ProofStep[] {
+  const c = env.ctx;
+  const { fid, parents, rs } = c;
+  const approvals: Record<string, unknown> = c.approvals ?? {};
+  const expenses: Record<string, string & number>[] = c.expenses ?? [];
+  const rule = (rs.rules as { origin?: string; text?: string; source?: { page?: number; section?: string; quote?: string } }[]).find((r) => r.origin !== "resolution" && r.source?.quote);
+  const both = Object.keys(approvals).length === 2;
+  const verified = expenses.filter((e) => e.tone === "good");
+  const outside = expenses.filter((e) => String(e.label).startsWith("Settled outside"));
+  const e = verified[0] ?? expenses.find((x) => x.label === env.words.status?.payable) ?? expenses[0];
+  const name = e ? `${env.words.categories[e.category] ?? e.category} · ${usd(e.amount_minor)}` : "";
+  const Fact = ({ children }: { children: React.ReactNode }) => <p className="m-0 rounded-xl bg-sunk px-4 py-3"><span className="font-semibold">In this demo family: </span>{children}</p>;
+  return [
+    { title: "The agreement", href: `/f/${fid}/rules`, cta: "Open the rules and their clauses",
+      body: <>
+        <p className="m-0">The agreement is the only source of rules. An AI read it once and proposed each rule with a word-for-word quote. Plain code then checked every quote against the document; a rule whose quote isn&apos;t found is set aside.</p>
+        {rule?.source ? <blockquote className="clause m-0">{rule.source.quote}<footer className="mt-1 text-sm text-ink-2">{rule.source.page ? `Page ${rule.source.page}, ` : ""}{rule.source.section} · synthetic sample agreement</footer></blockquote> : null}
+      </> },
+    { title: "The shared decision", href: `/f/${fid}/rules`, cta: "See the approval state",
+      body: <>
+        <p className="m-0">Nothing is used until both parents approve the exact same version, each in their own session. Unclear clauses become questions answered privately; matching answers are a working arrangement in Between and don&apos;t change the legal agreement.</p>
+        <Fact>rules version {rs.version}: {(["A", "B"] as const).map((r) => `${parents[r].label} ${approvals[r] ? "approved" : "has not approved yet"}`).join(", ")}.{both ? "" : " Until both approve, no expense can be decided."}</Fact>
+      </> },
+    { title: "The expense", href: e ? `/f/${fid}/expenses/${e.id}` : `/f/${fid}/expenses/new`, cta: e ? "Open the decision and its clauses" : "Add an expense",
+      body: <>
+        <p className="m-0">A parent adds a receipt and confirms the amount. The rules engine, with no AI in it, then decides who owes what and by when, and cites the clauses it used. The same inputs always give the same answer.</p>
+        <Fact>{e ? <>{name}, paid by {parents[e.paid_by].label} on {e.incurred_on}. Outcome: {e.label}. Open it to see the amount and the clauses behind it.</> : both ? "no expense yet. Add one to see a decision." : "no expense yet; both parents need to approve the rules first."}</Fact>
+      </> },
+    { title: "The payment", href: e ? `/f/${fid}/expenses/${e.id}` : `/f/${fid}`, cta: e ? "Open the expense" : "Back to home",
+      body: <>
+        <p className="m-0">Three different states, never merged: <strong>in progress</strong> (the paying parent confirmed and was sent to PayPal), <strong>captured</strong> (PayPal took the payment), and <strong>verified with PayPal</strong> (Between read the capture back from PayPal and the amount, payee and reference matched). Only the paying parent can start a payment. This walkthrough never does.</p>
+        <Fact>{verified.length} payment{verified.length === 1 ? "" : "s"} verified with PayPal (sandbox){outside.length ? `; ${outside.length} sample-history expense${outside.length === 1 ? "" : "s"} marked settled outside Between, not verified by PayPal` : ""}.{e ? ` ${name} is: ${e.label}.` : ""}</Fact>
+      </> },
+    { title: "The record", href: `/f/${fid}/record`, cta: "Open the record",
+      body: <>
+        <p className="m-0">Every step above is in a record with its actor, each entry chained to the one before by a hash, so an edit or deletion is detected. Either parent can re-check every payment against PayPal and export the record.</p>
+        <p className="m-0">Then see the year: <Link href={`/f/${fid}/money`}>Money &amp; Time</Link> puts the same decisions in an AG Studio report beside a Bryntum calendar of parenting time and payment windows.</p>
+      </> },
+  ];
+}
+
 export function Home({ env }: P) {
   const c = env.ctx;
   const words = env.words;
@@ -146,6 +188,8 @@ export function Home({ env }: P) {
           <Submit variant="quiet" pendingText="Switching…">Switch to {them.label}</Submit>
         </BackendForm>
       ) : null}
+
+      {c.demo_family && rs ? <ProofTour storageKey={`proof-${fid}`} steps={proofSteps(env)} /> : null}
 
       {c.invite_url ? (
         <Section title={`Invite ${them.label}`} hint="Send this link privately. It opens once and expires in 72 hours." className="mb-5 !bg-act-wash !border-transparent">
