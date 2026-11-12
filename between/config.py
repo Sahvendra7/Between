@@ -20,6 +20,7 @@ class Settings:
     secure_cookies: bool = False
     demo_parent_a_email: str = ""
     demo_parent_b_email: str = ""
+    money_ai: bool = False  # the Ledger guide (BETWEEN_MONEY_AI=1); demo mode only
     ag_studio_license: str = ""  # AG Grid supplies one for judging; without it Studio shows a watermark
 
 
@@ -46,5 +47,6 @@ def load(env: Mapping[str, str] = os.environ) -> Settings:
         secure_cookies=_flag(env.get("BETWEEN_SECURE_COOKIES"), False),
         demo_parent_a_email=env.get("DEMO_PARENT_A_EMAIL", ""),
         demo_parent_b_email=env.get("DEMO_PARENT_B_EMAIL", ""),
+        money_ai=_flag(env.get("BETWEEN_MONEY_AI"), False),
         ag_studio_license=env.get("AG_STUDIO_LICENSE", ""),
     )

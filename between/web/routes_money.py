@@ -6,7 +6,12 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from between import access, demo, engine as E, ruleset as RS
+import json
+import logging
+
+from fastapi.responses import JSONResponse
+
+from between import access, demo, engine as E, money_ai as M, ruleset as RS
 from between.money import fmt_usd
 from between.web.deps import checked_form, get_conn, now, render, require_family
 from between.web.ledger import family_feed
@@ -98,3 +103,34 @@ async def sample_year(request: Request, fid: str, conn=Depends(get_conn)):
                   "already_added": "This family already has its sample year."}[code]
         raise HTTPException(status_code=403 if code == "not_demo" else 409, detail=detail) from None
     return RedirectResponse(f"/f/{fid}/money", status_code=303)
+
+
+log = logging.getLogger("between.ai")
+
+
+@router.post("/f/{fid}/money/ai")
+async def ledger_guide_turn(request: Request, fid: str, conn=Depends(get_conn)):
+    """One AG Studio agent turn, forwarded to Gemini. The agent's tools are read-only; this route only relays."""
+    s = require_family(request, conn, fid)
+    settings = request.app.state.settings
+    if not (settings.money_ai and settings.demo_mode and settings.gemini_api_key):
+        raise HTTPException(status_code=404)
+    if not access.check_csrf(s, request.headers.get("x-csrf-token")):
+        raise HTTPException(status_code=403, detail="Reload the page and try again.")
+    raw = await request.body()
+    if len(raw) > M.MAX_BODY:
+        return JSONResponse(M.failed("That conversation is too long. Start a new one."), status_code=413)
+    try:
+        req = json.loads(raw)
+        body = M.to_chat(req, M.SIGS)
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return JSONResponse(M.failed("The guide couldn't read that request."), status_code=400)
+    with request.app.state.engine.begin() as budget:  # committed now, not after the slow model call
+        within = M.charge(budget, fid, now())
+    if not within:
+        return JSONResponse(M.failed("The guide is resting this hour. The calendar and report still work."), status_code=429)
+    status, resp = M.call_gemini(body, settings.gemini_api_key)
+    log.info("ledger guide turn: family=%s status=%s", fid, status)
+    if status != 200 or not resp:
+        return M.failed("The guide couldn't answer right now. The calendar and report still work.")
+    return M.from_chat(resp, M.SIGS)

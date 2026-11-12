@@ -181,6 +181,14 @@ ai_cache = Table(
     Column("at", TS, nullable=False),
 )
 
+# The Ledger guide's hourly budget per family, so a public demo can't spend the free-plan model quota.
+ai_budget = Table(
+    "ai_budget", metadata,
+    Column("family_id", String, primary_key=True),
+    Column("hour", String, primary_key=True),
+    Column("calls", Integer, nullable=False),
+)
+
 webhook_event = Table(
     "webhook_event", metadata,
     Column("id", String, primary_key=True),
