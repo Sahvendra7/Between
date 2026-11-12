@@ -9,7 +9,15 @@
   - "Why does Father owe $198.00?" → `view_schema`, `execute_query`, `explain_expense`, `show_on_calendar` → an answer quoting §6.1 p.2 and §7.2 p.3.
   - The browser calls only `/money/*`, never Gemini directly.
 - Proxy live check: a two-turn tool call with the thought signature sent back → `completed`. Without the signature, Gemini answers 400.
-- Hosted: **pending** the owner's OK to merge into `main` (Render auto-deploys from it).
+- Hosted (12 Nov, `main` at `9497acb`; Render deployed it in about a minute):
+  - New demo family, both parents approve, add the sample year, open `/money` over HTTPS.
+  - AG Studio loads past its SRI check, with no CSP or integrity errors.
+  - The Bryntum calendar has 39 events.
+  - KPIs: $982.00 owed, $0.00 verified, $784.00 settled outside, $198.00 open (same as local, on Render Postgres).
+  - The Ledger guide is off until `BETWEEN_MONEY_AI=1` is set on Render.
+- Hosted e2e after the deploy: `uv run python scripts/e2e_sandbox.py --base-url https://between-vjte.onrender.com` → **E2E PASS**.
+  - Capture `15D46614X7056845N` ($252.00, approved in the sandbox as the Father's account); record intact.
+  - The approving browser wasn't the script's session, so `/pay/return` refused it (403) as designed, and the payment completed through PayPal's read-back.
 
 ## Judge-facing polish, hosted (Thu 12 Nov 2026, ~09:00 IST, commit `6282260`)
 - Over HTTP against https://between-vjte.onrender.com (Render Postgres): the rules page's "see it in your agreement" → `200` with the clause highlighted; Mother asks for 2 days in Father's week → "Waiting for Father"; Father agrees → calendar event `swap-agreed`; the vendored calendar script has the drag hook.
