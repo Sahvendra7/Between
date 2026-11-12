@@ -1,7 +1,7 @@
 # Build status (evidence)
 
 ## Money & Time + Ledger guide, local (Thu 12 Nov 2026, branch `money-and-time`)
-- `uv run pytest -q` → 213 passed.
+- `uv run pytest -q` → 216 passed (after the final-review fixes).
 - In a real browser (local, SQLite, demo family, sample year): AG Studio 3.1.0 from jsDelivr renders under the page-scoped CSP with no CSP errors. KPIs: owed $982.00 (the nine engine decisions), settled outside $784.00, verified with PayPal $0.00, still open $198.00. Activity caps: $225.00 used of $1,500.00 per parent (§6.3), which matches a hand check.
 - The Bryntum calendar shows the open $198.00 window (Father → Mother, due 2026-11-15, §7.2 p.3). Clicking it filters every report widget to that expense.
 - Ledger guide on `gemini-3.5-flash-lite`, real key:

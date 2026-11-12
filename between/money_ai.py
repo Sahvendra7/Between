@@ -22,6 +22,7 @@ MODEL = "gemini-3.5-flash-lite"  # gemini-3.6-flash was over its free quota on 1
 MAX_TOKENS = 2048
 MAX_BODY = 65_536
 HOURLY_LIMIT = 40
+GLOBAL_HOURLY_LIMIT = 200  # all families together: a new demo family must not mean a new budget on the shared key
 SIG_TTL = 3600
 _DROP = {"$schema", "$id", "additionalProperties", "strict", "title"}
 
@@ -149,14 +150,18 @@ def call_gemini(body: dict, key: str) -> tuple[int, dict | None]:
 
 
 def charge(conn, fid: str, now: datetime) -> bool:
-    """One proxy call against this family's hourly budget. False once the hour's budget is spent."""
+    """One proxy call against this family's hourly budget and everyone's. False once either is spent."""
+    return _charge(conn, "*", now, GLOBAL_HOURLY_LIMIT) and _charge(conn, fid, now, HOURLY_LIMIT)
+
+
+def _charge(conn, fid: str, now: datetime, limit: int) -> bool:
     hour = now.strftime("%Y-%m-%dT%H")
     t = db.ai_budget
     calls = conn.execute(sa.select(t.c.calls).where(t.c.family_id == fid, t.c.hour == hour)).scalar()
     if calls is None:
         conn.execute(sa.insert(t).values(family_id=fid, hour=hour, calls=1))
         return True
-    if calls >= HOURLY_LIMIT:
+    if calls >= limit:
         return False
     conn.execute(sa.update(t).where(t.c.family_id == fid, t.c.hour == hour).values(calls=calls + 1))
     return True

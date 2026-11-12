@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import RedirectResponse
 
 import json
@@ -134,7 +135,8 @@ async def ledger_guide_turn(request: Request, fid: str, conn=Depends(get_conn)):
         within = M.charge(budget, fid, now())
     if not within:
         return JSONResponse(M.failed("The guide is resting this hour. The calendar and report still work."), status_code=429)
-    status, resp = M.call_gemini(body, settings.gemini_api_key)
+    # a worker thread: the model can take up to 60 s and Render runs one event loop for every request
+    status, resp = await run_in_threadpool(M.call_gemini, body, settings.gemini_api_key)
     log.info("ledger guide turn: family=%s status=%s", fid, status)
     if status != 200 or not resp:
         return M.failed("The guide couldn't answer right now. The calendar and report still work.")

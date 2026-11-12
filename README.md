@@ -133,7 +133,7 @@ The hosted demo's two parents are dedicated **PayPal sandbox** personal accounts
 ## Tests
 
 ```bash
-uv run pytest -q                                          # 213 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
+uv run pytest -q                                          # 216 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
 uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (Gemini or Anthropic key; add --workers 1 on a free plan): 3 agreements + 1 planted-instruction agreement
 uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000   # golden path with a real sandbox approval
 uv run python scripts/verify.py --family <id>             # independent check of every payment against PayPal + the record chain

@@ -220,3 +220,11 @@ def test_money_page_shows_guide_only_when_enabled():
     add_year(c, fid)
     page = c.get(f"/f/{fid}/money").text
     assert 'data-ai="1"' in page and 'id="csrf"' in page
+
+
+def test_home_balance_wording_is_true_with_outside_history():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    home = c.get(f"/f/{fid}").text
+    assert "Only payments PayPal confirms count." not in home
+    assert "Only payments PayPal confirms count as verified" in home

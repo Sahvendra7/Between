@@ -48,7 +48,7 @@
       {% if balance.rows["A"].settled_outside or balance.rows["B"].settled_outside %}<tr><th scope="row">Settled outside Between (not verified)</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].settled_outside|usd }}</td>{% endfor %}</tr>{% endif %}
     </tbody>
   </table>
-  <p class="hint">Only payments PayPal confirms count. Expenses that need both of you, or aren't shared, aren't included.</p>
+  <p class="hint">Only payments PayPal confirms count as verified; synthetic sample history settled outside Between is shown on its own line. Expenses that need both of you, or aren't shared, aren't included.</p>
 </section>
 {% endif %}
 

@@ -89,3 +89,30 @@ def test_proxy_logs_no_content(monkeypatch, caplog):
     with caplog.at_level(logging.DEBUG):
         ask(c, fid, {"input": [{**USER, "content": [{"type": "text", "text": "orthodontist bill"}]}], "instructions": "x"})
     assert not any("orthodontist" in r.getMessage() for r in caplog.records)
+
+
+def test_model_call_runs_off_the_event_loop(monkeypatch):
+    import asyncio
+    seen = []
+
+    def fake(body, key):
+        try:
+            asyncio.get_running_loop()
+            seen.append("event loop")  # a slow model call here would freeze every other request
+        except RuntimeError:
+            seen.append("worker thread")
+        return 200, GEMINI_TEXT
+    monkeypatch.setattr(M, "call_gemini", fake)
+    app, engine, c, fid = ai_app()
+    assert ask(c, fid).json()["status"] == "completed" and seen == ["worker thread"]
+
+
+def test_global_budget_caps_all_families_together(monkeypatch):
+    monkeypatch.setattr(M, "call_gemini", lambda body, key: (200, GEMINI_TEXT))
+    monkeypatch.setattr(M, "GLOBAL_HOURLY_LIMIT", 2)
+    app, engine, c1, fid1 = ai_app()
+    _, _, c2, fid2 = approved_demo(app, engine)
+    assert ask(c1, fid1).json()["status"] == "completed"
+    assert ask(c2, fid2).json()["status"] == "completed"
+    r = ask(c2, fid2)  # a fresh demo family doesn't get a fresh budget
+    assert r.status_code == 429 and r.json()["status"] == "failed"

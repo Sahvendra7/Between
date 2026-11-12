@@ -51,7 +51,7 @@ def family_summary(conn, s) -> dict:
 
 
 def _balance(conn, fid, labels, pays, corrs) -> dict:
-    """This year's shared expenses per parent, from decisions and PayPal-verified payments only."""
+    """This year's shared expenses per parent, from decisions; received counts PayPal-verified payments only."""
     from datetime import date
     year = str(date.today().year)
     rows = {r: {"paid": 0, "owed": 0, "received": 0, "settled_outside": 0} for r in ("A", "B")}
