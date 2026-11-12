@@ -139,7 +139,7 @@ E2E_BASE_URL=https://between-app-iota.vercel.app npx playwright test
 ## Known limitations
 
 - Vercel promoted the project's first CLI deployment straight to production, before a separate preview existed. The preview was deployed and smoke-tested next (through `vercel curl`, since previews are behind Vercel login).
-- PayPal sandbox sign-in is manual by design. Automated tests stop at the hand-off to `sandbox.paypal.com`. A full capture → return → verify run on the Vercel origin needs a person to approve the payment in the sandbox.
+- A full sandbox capture → return → verify through the Next.js frontend passed on local dev (`tests/paypal-local.spec.ts`, capture 7JJ82421FH569103Y). On the hosted Vercel site, the automated tests stop at the hand-off to `sandbox.paypal.com`. A hosted approval needs a person (`tests/paypal-manual.spec.ts`, headed). The return URL there comes from the same allowlist, which the invite-link test proves on production.
 - The theme follows the system (`prefers-color-scheme`). There is no manual toggle, which avoids an inline script before paint.
 - The AG Studio trial watermark and licence banner show until `AG_STUDIO_LICENSE` is set. AG Studio's charts use a system font, because the next/font family name is hashed.
 - shadcn/ui, Radix, GSAP and Lenis were not added: the app has no menus, dialogs or popovers, and the motion above needs none of them. The skills for them were not installed in this environment.
