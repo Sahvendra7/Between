@@ -14,7 +14,7 @@ function dataModel() {
     {
       id: 'expenses', description: 'One row per shared child expense. Amounts are what the paying parent spent.',
       data: feed.expenses,
-      fields: [hidden('id'), f('date', 'Date', 'dateFormat'), f('categoryName', 'Category'), f('paidByName', 'Paid by'),
+      fields: [f('id', 'Expense ID'), f('date', 'Date', 'dateFormat'), f('categoryName', 'Category'), f('paidByName', 'Paid by'),
         f('amount', 'Amount', 'currencyFormat'), f('label', 'Status'), f('status', 'Outcome'), hidden('href')],
     },
     {
@@ -120,6 +120,129 @@ window.addEventListener('hashchange', () => {
   if (m2) show(m2[1]);
 });
 
+// ---- Ledger guide: an AG Studio custom agent whose tools only read what Between already decided ------------
+const fid = studioEl.dataset.fid;
+const usd = (cents) => (cents == null ? null : `$${(cents / 100).toFixed(2)}`);  // formatting only
+
+// AG Studio's adapter contract, over our own server proxy (/money/ai → Gemini chat completions).
+function geminiAdapter(csrf) {
+  return {
+    executeTurn(request, options = {}) {
+      let resolve;
+      const complete = new Promise((res) => { resolve = res; });
+      async function* stream() {
+        let data;
+        try {
+          const r = await fetch(`/f/${fid}/money/ai`, {
+            method: 'POST', credentials: 'same-origin', signal: options.signal,
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ input: request.input, instructions: request.instructions, tools: request.tools,
+              toolChoice: request.toolChoice, responseFormat: request.responseFormat }),
+          });
+          data = await r.json();
+        } catch {
+          data = { status: 'failed', error: { message: "The guide couldn't be reached. The calendar and report still work." } };
+        }
+        if (data.status === 'failed') {  // show the reason in the chat rather than a silent failure
+          data = { id: `r${Date.now()}`, createdAt: Date.now(), status: 'completed', output: [{ kind: 'output',
+            type: 'message', role: 'assistant', id: `m${Date.now()}`, status: 'completed',
+            content: [{ type: 'text', text: data.error?.message ?? 'The guide could not answer.', annotations: [] }] }] };
+        }
+        for (const item of data.output) {
+          if (item.type === 'message') {
+            const text = item.content.map((p) => p.text ?? '').join('');
+            yield { type: 'TEXT_MESSAGE_START', messageId: item.id, role: 'assistant' };
+            for (let i = 0; i < text.length; i += 40) yield { type: 'TEXT_MESSAGE_CONTENT', messageId: item.id, delta: text.slice(i, i + 40) };
+            yield { type: 'TEXT_MESSAGE_END', messageId: item.id };
+          } else if (item.type === 'function_call') {
+            yield { type: 'TOOL_CALL_START', toolCallId: item.callId, toolCallName: item.name };
+            yield { type: 'TOOL_CALL_ARGS', toolCallId: item.callId, delta: item.arguments };
+            yield { type: 'TOOL_CALL_END', toolCallId: item.callId };
+          }
+        }
+        resolve(data);  // complete resolves only once the stream is drained, as AG Studio expects
+      }
+      return { stream: stream(), complete };
+    },
+  };
+}
+
+const INSTRUCTIONS = "You help two parents read their own Between ledger. Every amount, share, due date and outcome " +
+  "comes from Between's rules engine: get it with explain_expense or preview_expense, or from the ledger rows. Never " +
+  "calculate or estimate an amount yourself. For every 'why', quote the clause and give its section and page. Say " +
+  "'verified with PayPal' only when the payment's settled value is 'verified'. You cannot pay, approve, agree to " +
+  "anything or change rules; tell the parent which Between page does that: asking for or giving consent in advance is " +
+  "on the Home page, paying is on the expense's own page, rules are on the Rules page. When a date matters, call show_on_calendar. " +
+  `The parents are ${feed.names.A} and ${feed.names.B}. Expense IDs are in the expenses table (Expense ID). ` +
+  `Today is ${feed.asOf}.`;
+
+function ledgerGuide(csrf) {
+  const parents = [feed.names.A, feed.names.B];
+  const role = (n) => (n === feed.names.B ? 'B' : 'A');
+  return ({ api }) => S.createAiHarness(api, ({ tools: { studio } }) => {
+    const explain = api.defineAiTool({
+      name: 'explain_expense',
+      description: "Between's stored decision for one expense: outcome, who owes whom, how much, the due date, the " +
+        'PayPal state and the agreement clauses it cites, quoted word for word.',
+      params: (s) => s.object({ expenseId: s.string({ description: 'Expense ID from the expenses table' }) }),
+      execute: async ({ expenseId }, ctx) => {
+        const r = await fetch(`/f/${fid}/money/expense/${encodeURIComponent(expenseId)}.json`, { signal: ctx.signal });
+        if (!r.ok) return ctx.error('There is no expense with that ID in this family.');
+        const d = await r.json();
+        const who = d.owedBy ? `${d.names[d.owedBy]} owes ${d.names[d.owedTo]} ${usd(d.amountMinor)}` : 'Nothing is owed';
+        return ctx.success(`${d.status}${d.reason ? ` (${d.reason})` : ''}. ${who}${d.dueOn ? `, due ${d.dueOn}` : ''}. ` +
+          `Payment: ${d.payment.settled}. Clauses: ${d.cite.map((c) => `§${c.section} p.${c.page} "${c.quote}"`).join('; ')}`, d);
+      },
+    });
+    const preview = api.defineAiTool({
+      name: 'preview_expense',
+      description: "What Between's rules engine would decide for a hypothetical expense, without saving anything: " +
+        'outcome, who would owe whom and how much, the due date, and the clauses. Use it for any "what if" question.',
+      params: (s) => s.object({
+        category: s.enum(['medical', 'education', 'extracurricular', 'clothing', 'gifts', 'food']),
+        amount: s.number({ description: 'Amount in US dollars, e.g. 450' }),
+        date: s.string({ description: 'Date the cost is incurred, YYYY-MM-DD' }),
+        paidBy: s.enum(parents),
+      }),
+      execute: async ({ category, amount, date, paidBy }, ctx) => {
+        const csrfToken = csrf;
+        const r = await fetch(`/f/${fid}/money/preview`, {
+          method: 'POST', signal: ctx.signal, headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+          body: JSON.stringify({ category, amountMinor: Math.round(amount * 100), incurredOn: date, paidBy: role(paidBy) }),
+        });
+        if (!r.ok) return ctx.error('Between could not preview that: check the category, amount and date.');
+        const d = await r.json();
+        const who = d.owedBy ? `${feed.names[d.owedBy]} would owe ${feed.names[d.owedTo]} ${usd(d.amountMinor)}` : 'Nobody would owe anything yet';
+        return ctx.success(`Engine outcome: ${d.status}${d.reason ? ` (${d.reason})` : ''}. ${who}` +
+          `${d.dueOn ? `, due ${d.dueOn}` : ''}. Clauses: ${d.cite.map((c) => `§${c.section} p.${c.page} "${c.quote}"`).join('; ')}`, d);
+      },
+    });
+    const showTool = api.defineAiTool({
+      name: 'show_on_calendar',
+      description: 'Move the parenting-time calendar on this page to a date, optionally highlighting one expense.',
+      params: (s) => s.object({ date: s.string({ description: 'YYYY-MM-DD' }),
+        expenseId: s.string({ description: 'Expense ID to highlight' }).optional() }),
+      execute: async ({ date, expenseId }, ctx) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return ctx.error('Use a YYYY-MM-DD date.');
+        show(date, expenseId ? `e${expenseId}` : undefined);
+        return ctx.success(`The calendar now shows ${date}.`);
+      },
+    });
+    const builtIn = ['viewSchema', 'viewPage', 'executeQuery', 'addWidget'].filter((n) => typeof studio[n] === 'function').map((n) => studio[n]());
+    const open = feed.obligations.find((o) => o.kind === 'pay-window' && ['open', 'overdue'].includes(o.state));
+    return {
+      agents: [S.directLlmRunner({ id: 'ledger-guide', adapter: geminiAdapter(csrf), instructions: () => INSTRUCTIONS,
+        tools: () => [...builtIn, explain, preview, showTool] })],
+      primary: 'ledger-guide',
+      promptStarters: [
+        ...(open ? [{ label: `Why ${usd(open.amountMinor)}?`, prompt: `Why does ${feed.names[open.owedBy]} owe ${usd(open.amountMinor)}, and by when?` }] : []),
+        { label: 'What if…', prompt: `If ${feed.names.A} pays $450 for soccer camp on 14 December, what happens under our agreement?` },
+        { label: "What's open?", prompt: "What's still open between us, and when is it due?" },
+      ],
+    };
+  });
+}
+
 // ---- AG Studio: the year as a report ---------------------------------------------------------------------
 if (S && feed.expenses.length) {
   if (studioEl.dataset.license) S.AgStudioLicenseManager.setLicenseKey(studioEl.dataset.license);
@@ -127,8 +250,11 @@ if (S && feed.expenses.length) {
   const theme = S.studioTheme?.withParams({ fontFamily: '"Anek Latin", "Noto Sans", system-ui, sans-serif',
     accentColor: '#16505A' });
   // No filters are configured, so view mode drops the (empty) filters panel: on a phone it covered the report.
-  const panels = { edit: { left: ['ai'], right: ['filters', 'edit', 'data'] }, view: { left: [], right: [] } };
-  const api = S.createStudio(studioEl, { data: dataModel(), mode: 'view', initialState: await initialReport(), theme, panels });
+  const ai = studioEl.dataset.ai === '1';
+  const panels = { edit: { left: ['ai'], right: ['filters', 'edit', 'data'] }, view: { left: ai ? ['ai'] : [], right: [] } };
+  const props = { data: dataModel(), mode: 'view', initialState: await initialReport(), theme, panels };
+  if (ai) props.ai = ledgerGuide(document.getElementById('csrf').value);
+  const api = ai ? S.createStudioWithAi(studioEl, props) : S.createStudio(studioEl, props);
   main.classList.add('has-studio');
   const toggle = document.getElementById('studio-mode');
   toggle.hidden = false;

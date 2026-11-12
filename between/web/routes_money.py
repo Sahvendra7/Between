@@ -9,15 +9,19 @@ from fastapi.responses import RedirectResponse
 import json
 import logging
 
+import sqlalchemy as sa
+
 from fastapi.responses import JSONResponse
 
-from between import access, demo, engine as E, money_ai as M, ruleset as RS
+from between import access, db, demo, engine as E, money_ai as M, ruleset as RS
 from between.money import fmt_usd
 from between.web.deps import checked_form, get_conn, now, render, require_family
 from between.web.ledger import family_feed
 from between.web.present import EXPENSE_CATEGORIES
 from between.web.routes_calendar import calendar_data
-from between.web.routes_expenses import _consents, _history
+from between.web.ledger import _settled
+from between.web.routes_expenses import _consents, _expense, _history, citations, live_payment
+from between.web.routes_family import labels
 
 router = APIRouter()
 
@@ -38,7 +42,8 @@ def money_page(request: Request, fid: str, conn=Depends(get_conn)):
     resp = render(request, "money.html", s=s, fid=fid, feed=family_feed(conn, s, now().date()),
                   approved=bool(rs and E.is_approved(rs, approvals)),
                   demo_family=settings.demo_mode and demo.is_visitor_family(conn, fid),
-                  studio_src=AG_STUDIO_SRC, studio_sri=AG_STUDIO_SRI, license=settings.ag_studio_license)
+                  studio_src=AG_STUDIO_SRC, studio_sri=AG_STUDIO_SRI, license=settings.ag_studio_license,
+                  ai_enabled=bool(settings.money_ai and settings.demo_mode and settings.gemini_api_key))
     resp.headers["Content-Security-Policy"] = MONEY_CSP
     return resp
 
@@ -134,3 +139,23 @@ async def ledger_guide_turn(request: Request, fid: str, conn=Depends(get_conn)):
     if status != 200 or not resp:
         return M.failed("The guide couldn't answer right now. The calendar and report still work.")
     return M.from_chat(resp, M.SIGS)
+
+
+@router.get("/f/{fid}/money/expense/{eid}.json")
+def expense_json(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
+    """The stored decision for one expense, with the clauses it cites, for the Ledger guide. Read-only."""
+    s = require_family(request, conn, fid)
+    e = _expense(conn, fid, eid)  # 404 unless it's this family's
+    drow = conn.execute(sa.select(db.decision).where(db.decision.c.expense_id == eid)).mappings().first()
+    d = json.loads(drow["json"]) if drow else {"status": "undecided"}
+    names = labels(conn, fid)
+    cites = citations(conn, drow["ruleset_hash"], d, names, fid) if drow else []
+    pay = live_payment(conn, eid, "share")
+    return {"expenseId": eid, "category": e["category"], "expenseAmountMinor": e["amount_minor"], "paidBy": e["paid_by"],
+            "incurredOn": e["incurred_on"], "requestedOn": e["requested_on"], "status": d.get("status"),
+            "reason": d.get("reason"), "owedBy": d.get("owed_by"), "owedTo": d.get("owed_to"),
+            "amountMinor": d.get("amount_minor"), "dueOn": d.get("due_on"), "names": names,
+            "payment": {"settled": _settled(pay), "verifiedAt": pay["last_verified_at"].isoformat()
+                        if pay and pay["last_verified_at"] else None},
+            "cite": [{"section": c.get("section"), "page": c.get("page"), "quote": x["quote"], "rule": x["what"], "href": x.get("href")}
+                     for c, x in zip(d.get("cite", []), cites) if x["quote"]]}

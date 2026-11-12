@@ -24,7 +24,8 @@
   <div id="cal" class="calendar money-cal" aria-label="Parenting time, expenses and payment windows"></div>
   <p class="hint">Bars show each payment window, from the day it was asked for to the day it's due under your agreement. Click an expense or a window to focus the report on it.</p>
   <div class="studio-bar"><button type="button" id="studio-clear" hidden>Show the whole year</button><button type="button" id="studio-mode" hidden>Edit report</button></div>
-  <div id="studio" class="studio" data-src="/f/{{ fid }}/money.json" data-license="{{ license }}" aria-label="Your year: report and ledger"></div>
+  {% if ai_enabled %}<input type="hidden" id="csrf" value="{{ s.csrf }}">{% endif %}
+  <div id="studio" class="studio" data-src="/f/{{ fid }}/money.json" data-fid="{{ fid }}" data-license="{{ license }}" data-ai="{{ '1' if ai_enabled else '' }}" aria-label="Your year: report, ledger and guide"></div>
   <section class="card" id="ledger-fallback">
     <h2>Ledger</h2>
     {% if feed.expenses %}

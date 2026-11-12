@@ -194,3 +194,29 @@ def test_preview_rejects_bad_input_and_csrf():
     assert preview(c, fid, good, token=False).status_code == 403
     _, _, c2, fid2 = approved_demo(app, engine)
     assert preview(c2, fid, good, token_fid=fid2).status_code == 403
+
+
+def test_expense_json_is_family_scoped_and_read_only():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    feed = c.get(f"/f/{fid}/money.json").json()
+    [w] = [o for o in feed["obligations"] if o["kind"] == "pay-window" and o["state"] == "open"]
+    before = counts_all(engine)
+    d = c.get(f"/f/{fid}/money/expense/{w['expenseId']}.json").json()
+    assert (d["status"], d["owedBy"], d["owedTo"], d["amountMinor"], d["dueOn"]) == ("payable", "B", "A", 19800, w["end"])
+    assert d["payment"]["settled"] == "none" and {x["section"] for x in d["cite"]} >= {"6.1", "7.2"} and d["cite"][0]["quote"]
+    assert counts_all(engine) == before
+    _, _, c2, fid2 = approved_demo(app, engine)
+    assert c2.get(f"/f/{fid2}/money/expense/{w['expenseId']}.json").status_code == 404
+    assert c2.get(f"/f/{fid}/money/expense/{w['expenseId']}.json").status_code == 403
+
+
+def test_money_page_shows_guide_only_when_enabled():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    assert 'data-ai="1"' not in c.get(f"/f/{fid}/money").text
+    app, engine = make(money_ai=True, gemini_api_key="k")
+    app, engine, c, fid = approved_demo(app, engine)
+    add_year(c, fid)
+    page = c.get(f"/f/{fid}/money").text
+    assert 'data-ai="1"' in page and 'id="csrf"' in page
