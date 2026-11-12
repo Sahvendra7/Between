@@ -11,9 +11,11 @@ from between.reconcile import counts_as_paid
 from between.web.present import STATUS_WORDS, category_name
 
 
-def _expense_state(status: str, payment: dict | None) -> tuple[str, str]:
+def _expense_state(status: str, payment: dict | None, correction: dict | None = None) -> tuple[str, str]:
     if status == "reopened":
         return "Reopened: payment refunded", "wait"
+    if correction and not counts_as_paid(correction):
+        return f"Amount lowered: {fmt_usd(correction['amount_minor'])} to return", "wait"
     if payment and counts_as_paid(payment):
         return "Paid · verified with PayPal", "good"
     if payment and payment["status"] in ("created", "approved", "pending"):
@@ -24,15 +26,15 @@ def _expense_state(status: str, payment: dict | None) -> tuple[str, str]:
 
 def family_summary(conn, s) -> dict:
     labels = {r.role: r.label for r in conn.execute(sa.select(db.parent).where(db.parent.c.family_id == s.family_id))}
-    pays = {}
+    pays, corrs = {}, {}
     for p in conn.execute(sa.select(db.payment).join(db.expense, db.expense.c.id == db.payment.c.expense_id)
                           .where(db.expense.c.family_id == s.family_id)).mappings():
-        if p["kind"] == "share" and p["status"] not in ("failed", "declined", "cancelled"):
-            pays[p["expense_id"]] = dict(p)
+        if p["status"] not in ("failed", "declined", "cancelled"):
+            (pays if p["kind"] == "share" else corrs)[p["expense_id"]] = dict(p)
     expenses = []
     for e in conn.execute(sa.select(db.expense).where(db.expense.c.family_id == s.family_id)
                           .order_by(db.expense.c.requested_on.desc(), db.expense.c.id)).mappings():
-        label, tone = _expense_state(e["status"], pays.get(e["id"]))
+        label, tone = _expense_state(e["status"], pays.get(e["id"]), corrs.get(e["id"]))
         expenses.append({**dict(e), "label": label, "tone": tone})
     consents = []
     for c in conn.execute(sa.select(db.consent).where(db.consent.c.family_id == s.family_id)).mappings():

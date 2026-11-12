@@ -23,12 +23,14 @@ Between does three things, in this order:
 3. **New expense.** Choose medical, attach `samples/receipts/ortho_420.png`, and confirm $420.00. The decision: **$252.00, Father owes Mother, due in 14 days**, citing §6.1 (p. 2) and §7.2 (p. 3).
 4. **Switch to Father → Pay $252.00 with PayPal.** Confirm, approve in the PayPal sandbox as the Father's sandbox account (see *Judge sandbox accounts*), and come back to **Verified with PayPal**: paid $252.00, PayPal fee $9.28, received $242.72 (fee and received amount as reported by PayPal).
 5. **Record.** Every step has an actor and a chain hash. **Check every payment with PayPal now** re-reads each capture from PayPal.
+6. **Optional: correct an amount.** As Mother, lower the expense to $380.00. Father's share is now $228.00, so Mother sees **Return $24.00 to Father** and sends it back through the same sandbox checkout, verified with PayPal like any payment.
 
 ## Sandbox demonstration: what the PayPal flow is, and what it isn't
 
 - **What it is.** A PayPal **Orders v2 checkout** (`intent=CAPTURE`). Between's server creates it with `purchase_units[0].payee.email_address` set to the receiving parent's account. The paying parent approves it on PayPal; Between captures it, then reads it back with `GET /v2/payments/captures/{id}`. In the sandbox, both parents are **personal** sandbox accounts.
 - **What it isn't.** It is **not a Friends & Family transfer**. PayPal treats it as a commercial checkout: the receiving parent pays PayPal's fee, and the payment is eligible for PayPal seller protection.
 - **Fees.** Before payment, Between shows the fee as an **estimate** (3.49% + $0.49, which is what the sandbox charged). After payment it shows PayPal's actual breakdown, labelled "from PayPal".
+- **Who covers the fee.** Both parents answer a standing question on the rules page (a Between setting, not part of the agreement). If both choose "the paying parent adds the estimated fee", each decision adds the estimate and labels it as one.
 - **Open question.** Whether this checkout flow suits real-world parent-to-parent reimbursements under PayPal's terms is **unresolved**. It must be answered before any real launch.
 - **What Between never does** (each was proven in a feasibility spike):
   - **Holds:** Between can't void a hold placed on a parent's account (`403`).
@@ -114,7 +116,7 @@ The hosted demo's two parents are dedicated **PayPal sandbox** personal accounts
 ## Tests
 
 ```bash
-uv run pytest -q                                          # 151 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
+uv run pytest -q                                          # 170 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
 uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (needs ANTHROPIC_API_KEY): 3 agreements + 1 planted-instruction agreement
 uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000   # golden path with a real sandbox approval
 uv run python scripts/verify.py --family <id>             # independent check of every payment against PayPal + the record chain

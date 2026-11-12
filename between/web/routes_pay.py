@@ -62,7 +62,7 @@ async def pay_start(request: Request, fid: str, eid: str, conn=Depends(get_conn)
         raise HTTPException(status_code=409, detail="This expense changed since you opened the page. Reload and check it again.")
     pp, settings, t = _pp(request), request.app.state.settings, now()
     live = live_payment(conn, eid, "share")
-    if live and counts_as_paid(live):
+    if live and (counts_as_paid(live) or live["capture_id"]):
         return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
     if live is None:
         pid = uuid.uuid4().hex[:12]
@@ -116,7 +116,7 @@ async def return_start(request: Request, fid: str, eid: str, conn=Depends(get_co
     form = await checked_form(request, s)
     if form.get("confirm") != "yes":
         raise HTTPException(status_code=400, detail="Confirm the return first.")
-    if counts_as_paid(corr):
+    if counts_as_paid(corr) or corr["capture_id"]:
         return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
     pp, settings, t, pid = _pp(request), request.app.state.settings, now(), corr["id"]
     payee_email = parents(conn, fid)[corr["payee_role"]]["paypal_email"]

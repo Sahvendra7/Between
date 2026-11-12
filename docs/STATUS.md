@@ -14,7 +14,7 @@
 - Browser: desktop and 375px phone width checked; CSP console errors found (inline styles), fixed, pinned by `tests/test_templates.py`.
 
 ## Tests
-- `uv run pytest -q` → 148 passed.
+- `uv run pytest -q` → 170 passed (after Tasks 15–16: corrections by reverse checkout, fee option).
 - Extraction eval: `scripts/eval_extraction.py --runs 2 --backend cli` → GATE PASS (8/8 runs, incl. planted-instruction agreement). SDK eval pending `ANTHROPIC_API_KEY`.
 
 ## Golden-path e2e, local (Wed 11 Nov 2026, ~04:05 IST)

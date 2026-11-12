@@ -77,3 +77,9 @@ def test_cancelled_return_stays_owed():
     with engine.connect() as c:
         assert c.execute(sa.select(db.payment.c.status).where(db.payment.c.kind == "correction")).scalar_one() == "due"
     assert "Return $24.00 to Father" in a.get(loc).text
+
+
+def test_home_flags_a_due_return():
+    app, engine, pp, a, b, fid, loc = paid()
+    amend(a, loc, "380.00")
+    assert "$24.00 to return" in a.get(f"/f/{fid}").text
