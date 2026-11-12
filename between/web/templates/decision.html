@@ -11,6 +11,9 @@
     <p>PayPal now shows this payment as refunded or reversed, so it no longer counts as paid.</p>
   {% elif paid %}
     <p class="pill good">Paid · verified with PayPal</p>
+  {% elif payment and payment.status == "outside" %}
+    <p class="pill wait">Settled outside Between · not verified by PayPal</p>
+    <p class="hint">Synthetic sample history. Only payments made through Between's PayPal checkout are verified.</p>
   {% else %}
     <p class="pill {{ 'bad' if d.status == 'rejected' else 'wait' }}">{{ status_words.get(d.status, d.status) }}</p>
   {% endif %}

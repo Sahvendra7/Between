@@ -18,6 +18,8 @@ def _expense_state(status: str, payment: dict | None, correction: dict | None = 
         return f"Amount lowered: {fmt_usd(correction['amount_minor'])} to return", "wait"
     if payment and counts_as_paid(payment):
         return "Paid · verified with PayPal", "good"
+    if payment and payment["status"] == "outside":
+        return "Settled outside Between · not verified by PayPal", "wait"
     if payment and payment["status"] in ("created", "approved", "pending"):
         return "Payment in progress", "wait"
     tone = {"payable": "wait", "rejected": "bad"}.get(status, "wait")
@@ -52,7 +54,7 @@ def _balance(conn, fid, labels, pays, corrs) -> dict:
     """This year's shared expenses per parent, from decisions and PayPal-verified payments only."""
     from datetime import date
     year = str(date.today().year)
-    rows = {r: {"paid": 0, "owed": 0, "received": 0} for r in ("A", "B")}
+    rows = {r: {"paid": 0, "owed": 0, "received": 0, "settled_outside": 0} for r in ("A", "B")}
     q = (sa.select(db.expense.c.id, db.expense.c.paid_by, db.expense.c.amount_minor, db.decision.c.json)
          .join(db.decision, db.decision.c.expense_id == db.expense.c.id)
          .where(db.expense.c.family_id == fid, db.expense.c.incurred_on.startswith(year)))
@@ -65,7 +67,9 @@ def _balance(conn, fid, labels, pays, corrs) -> dict:
         for p, sign in ((pays.get(e["id"]), 1), (corrs.get(e["id"]), -1)):
             if p and counts_as_paid(p):  # a verified return reduces what the original payee received
                 rows[p["payee_role"] if sign == 1 else p["payer_role"]]["received"] += sign * p["amount_minor"]
-    due = {r: v["owed"] - v["received"] for r, v in rows.items()}
+        if (p := pays.get(e["id"])) and p["status"] == "outside":  # sample history: settled, but PayPal never saw it
+            rows[p["payee_role"]]["settled_outside"] += p["amount_minor"]
+    due = {r: v["owed"] - v["received"] - v["settled_outside"] for r, v in rows.items()}
     net = due["A"] - due["B"]
     if net == 0:
         line = "All settled"

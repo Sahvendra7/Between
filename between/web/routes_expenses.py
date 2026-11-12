@@ -189,7 +189,8 @@ def expense_page(request: Request, fid: str, eid: str, conn=Depends(get_conn)):
     names = labels(conn, fid)
     live, corr = live_payment(conn, eid, "share"), live_payment(conn, eid, "correction")
     paid = bool(live and counts_as_paid(live))
-    can_pay = d.get("status") == "payable" and s.role == d.get("owed_by") and not paid and e["status"] != "reopened"
+    outside = bool(live and live["status"] == "outside")  # sample history settled outside Between
+    can_pay = d.get("status") == "payable" and s.role == d.get("owed_by") and not paid and not outside and e["status"] != "reopened"
     can_amend = s.role == e["paid_by"] and e["status"] != "reopened" and corr is None and (live is None or paid)
     return render(request, "decision.html", s=s, fid=fid, e=e, d=d, names=names, cites=citations(conn, drow["ruleset_hash"] if drow else "", d, names, fid),
                   payment=live, paid=paid, can_pay=can_pay, can_redecide=d.get("status") in REDECIDABLE,

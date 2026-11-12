@@ -45,6 +45,7 @@
       <tr><th scope="row">Paid for shared expenses</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].paid|usd }}</td>{% endfor %}</tr>
       <tr><th scope="row">Owed to them under your rules</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].owed|usd }}</td>{% endfor %}</tr>
       <tr><th scope="row">Received, verified with PayPal</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].received|usd }}</td>{% endfor %}</tr>
+      {% if balance.rows["A"].settled_outside or balance.rows["B"].settled_outside %}<tr><th scope="row">Settled outside Between (not verified)</th>{% for r in ("A", "B") %}<td>{{ balance.rows[r].settled_outside|usd }}</td>{% endfor %}</tr>{% endif %}
     </tbody>
   </table>
   <p class="hint">Only payments PayPal confirms count. Expenses that need both of you, or aren't shared, aren't included.</p>

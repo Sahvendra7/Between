@@ -119,3 +119,55 @@ def is_visitor_family(conn, family_id: str) -> bool:
     from between import db
     key = conn.execute(sa.select(db.family.c.demo_key).where(db.family.c.id == family_id)).scalar()
     return bool(key and key.startswith("visitor-"))
+
+
+# ---- sample year (Money & Time): synthetic history, decided by the real engine -----------------------------
+# (incurred_on, category, paid_by, amount_minor, requested_after_days, settled). Settled rows that the engine
+# finds payable get a payment "settled outside Between": never PayPal-verified, never counted as received.
+SAMPLE_YEAR = [
+    ("2026-01-14", "medical", "A", 18000, 5, True),
+    ("2026-02-03", "education", "A", 24000, 3, True),
+    ("2026-02-20", "extracurricular", "B", 15000, 10, True),
+    ("2026-03-11", "medical", "B", 9000, 2, True),
+    ("2026-04-08", "extracurricular", "A", 18000, 7, True),
+    ("2026-05-02", "education", "B", 32000, 4, True),
+    ("2026-06-15", "extracurricular", "A", 45000, 6, False),   # over $200 without consent: needs consent (§6.2)
+    ("2026-07-21", "medical", "A", 60000, 40, False),          # asked after 30 days: too late (§7.1)
+    ("2026-08-25", "education", "A", 27000, 3, True),
+    ("2026-09-09", "clothing", "B", 8000, 1, False),           # not shared (§7.3)
+    ("2026-10-06", "extracurricular", "B", 12000, 5, True),
+    ("2026-10-28", "medical", "A", 33000, 4, False),           # left open: a live payment window
+]
+
+
+def add_sample_year(conn, fid: str, s, today) -> int:
+    """Adds SAMPLE_YEAR to a demo visitor family whose rules both parents approved. Once per family."""
+    from datetime import date, timedelta
+
+    from between import db, engine as E, record, ruleset as RS
+    from between.web.deps import actor
+    from between.web.routes_expenses import decide
+    if not is_visitor_family(conn, fid):
+        raise ValueError("not_demo")
+    rs, approvals = RS.current(conn, fid)
+    if not rs or not E.is_approved(rs, approvals):
+        raise ValueError("not_approved")
+    if conn.execute(sa.select(db.event.c.seq).where(db.event.c.family_id == fid,
+                                                     db.event.c.type == "demo.sample_year_added")).first():
+        raise ValueError("already_added")
+    for i, (incurred, cat, paid_by, amount, after, settled) in enumerate(SAMPLE_YEAR):
+        requested = min(date.fromisoformat(incurred) + timedelta(days=after), today).isoformat()
+        eid = uuid.uuid4().hex[:12]
+        row = {"id": eid, "family_id": fid, "paid_by": paid_by, "category": cat, "amount_minor": amount,
+               "incurred_on": incurred, "requested_on": requested, "receipt_sha256": f"sample-{fid}-{i}",
+               "emergency": False, "status": "submitted"}
+        conn.execute(sa.insert(db.expense).values(**row))
+        record.append(conn, fid, "expense.submitted", {"expense_id": eid, "category": cat, "amount_minor": amount,
+                                                       "paid_by": paid_by, "incurred_on": incurred, "sample": True}, actor(s))
+        d = decide(conn, fid, row, s)
+        if settled and d["status"] == "payable":
+            conn.execute(sa.insert(db.payment).values(
+                id=uuid.uuid4().hex[:12], expense_id=eid, kind="share", payer_role=d["owed_by"], payee_role=d["owed_to"],
+                amount_minor=d["amount_minor"], request_id=f"outside-{eid}", status="outside", verification="not_applicable"))
+    record.append(conn, fid, "demo.sample_year_added", {"count": len(SAMPLE_YEAR), "synthetic": True}, actor(s))
+    return len(SAMPLE_YEAR)

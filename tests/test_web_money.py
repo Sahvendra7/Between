@@ -1,0 +1,95 @@
+"""Money & Time routes: the demo sample year, and history settled outside Between that is never PayPal-verified."""
+import json
+import re
+
+import sqlalchemy as sa
+from fastapi.testclient import TestClient
+
+from between import db
+from test_ledger import approved_demo
+from webutil import FakePayPal, csrf, make, two_parents
+
+
+def add_year(c, fid):
+    return c.post(f"/f/{fid}/money/sample-year", data={"csrf": csrf(c.get(f"/f/{fid}/expenses/new").text)},
+                  follow_redirects=False)
+
+
+def switch(c, fid):
+    assert c.post(f"/demo/switch/{fid}", data={"csrf": csrf(c.get(f"/f/{fid}").text)}, follow_redirects=False).status_code == 303
+
+
+def decisions(engine, fid):
+    with engine.connect() as conn:
+        return [json.loads(r.json) | {"expense_id": r.expense_id, "category": r.category} for r in conn.execute(
+            sa.select(db.decision.c.json, db.decision.c.expense_id, db.expense.c.category)
+            .join(db.expense, db.expense.c.id == db.decision.c.expense_id).where(db.expense.c.family_id == fid))]
+
+
+def test_sample_year_requires_demo_and_approval():
+    app, engine = make()
+    a, b, fid = two_parents(app)
+    assert add_year(a, fid).status_code == 403
+    c = TestClient(app)
+    demo_fid = c.post("/demo/new", follow_redirects=False).headers["location"].rsplit("/", 1)[1]
+    assert add_year(c, demo_fid).status_code == 409
+
+
+def test_sample_year_adds_twelve_and_is_once_only():
+    app, engine, c, fid = approved_demo()
+    r = add_year(c, fid)
+    assert r.status_code == 303 and r.headers["location"] == f"/f/{fid}/money"
+    with engine.connect() as conn:
+        assert conn.execute(sa.select(sa.func.count()).select_from(db.expense).where(db.expense.c.family_id == fid)).scalar() == 12
+    assert add_year(c, fid).status_code == 409
+    switch(c, fid)
+    assert add_year(c, fid).status_code == 409
+
+
+def test_sample_year_outcomes_come_from_engine():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    ds = decisions(engine, fid)
+    statuses = {(d["status"], d.get("reason")) for d in ds}
+    assert {("needs_consent", "prior_consent_missing"), ("rejected", "requested_too_late"), ("rejected", "not_shared")} <= statuses
+    assert sum(d["status"] == "payable" for d in ds) == 9
+    with engine.connect() as conn:
+        pays = conn.execute(sa.select(db.payment.c.status, db.payment.c.verification)).all()
+    assert len(pays) == 8 and all(p == ("outside", "not_applicable") for p in pays)
+
+
+def test_outside_payment_not_payable_and_labelled():
+    pp = FakePayPal()
+    app, engine = make(pp=pp, demo_parent_a_email="sb-a@personal.example.com", demo_parent_b_email="sb-b@personal.example.com")
+    app, engine, c, fid = approved_demo(app, engine)
+    add_year(c, fid)
+    with engine.connect() as conn:
+        eid = conn.execute(sa.select(db.payment.c.expense_id).join(db.expense, db.expense.c.id == db.payment.c.expense_id)
+                           .where(db.expense.c.paid_by == "A", db.payment.c.status == "outside")).scalars().first()
+    switch(c, fid)  # Father owes on Mother's expenses
+    loc = f"/f/{fid}/expenses/{eid}"
+    page = c.get(loc).text
+    assert "Settled outside Between · not verified by PayPal" in page and "Pay $" not in page
+    pay_page = c.get(loc + "/pay").text
+    h = re.search(r'name="decision_hash" value="([0-9a-f]{64})"', pay_page).group(1)
+    r = c.post(loc + "/pay", data={"csrf": csrf(pay_page), "confirm": "yes", "decision_hash": h}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == loc
+    assert not [x for x in pp.calls if x[0] == "create"]
+    with engine.connect() as conn:
+        assert conn.execute(sa.select(sa.func.count()).select_from(db.payment).where(db.payment.c.expense_id == eid)).scalar() == 1
+
+
+def test_record_verify_skips_outside():
+    pp = FakePayPal()
+    app, engine = make(pp=pp)
+    app, engine, c, fid = approved_demo(app, engine)
+    add_year(c, fid)
+    r = c.post(f"/f/{fid}/record/verify", data={"csrf": csrf(c.get(f"/f/{fid}/record").text)}, follow_redirects=False)
+    assert r.status_code == 303 and pp.calls == []
+
+
+def test_balance_counts_outside_separately():
+    app, engine, c, fid = approved_demo()
+    add_year(c, fid)
+    home = c.get(f"/f/{fid}").text
+    assert "Settled outside Between (not verified)" in home

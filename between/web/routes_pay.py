@@ -62,7 +62,7 @@ async def pay_start(request: Request, fid: str, eid: str, conn=Depends(get_conn)
         raise HTTPException(status_code=409, detail="This expense changed since you opened the page. Reload and check it again.")
     pp, settings, t = _pp(request), request.app.state.settings, now()
     live = live_payment(conn, eid, "share")
-    if live and (counts_as_paid(live) or live["capture_id"]):
+    if live and (counts_as_paid(live) or live["capture_id"] or live["status"] == "outside"):
         return RedirectResponse(f"/f/{fid}/expenses/{eid}", status_code=303)
     if live is None:
         pid = uuid.uuid4().hex[:12]
