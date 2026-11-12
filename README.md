@@ -21,11 +21,12 @@ Between does three things, in this order:
 ## 60-second tour
 
 1. Open the app and click **Try a demo family**. You get a synthetic family with a sample agreement (`samples/agreements/plan1_rivera_okafor.txt`) and 11 proposed rules.
-2. **Rules.** Each rule shows its quote, page and section. Click **I approve these 11 rules**, then **Switch to Father** (a demo shortcut) and approve again.
+2. **Rules.** Each rule shows its quote, page and section; **see it in your agreement** opens the uploaded text with that exact clause highlighted. Click **I approve these 11 rules**, then **Switch to Father** (a demo shortcut) and approve again.
 3. **New expense.** Choose medical, attach `samples/receipts/ortho_420.png`, and confirm $420.00. The decision: **$252.00, Father owes Mother, due in 14 days**, citing §6.1 (p. 2) and §7.2 (p. 3).
 4. **Switch to Father → Pay $252.00 with PayPal.** Confirm, approve in the PayPal sandbox as the Father's sandbox account (see *Judge sandbox accounts*), and come back to **Verified with PayPal**: paid $252.00, PayPal fee $9.28, received $242.72 (fee and received amount as reported by PayPal).
-5. **Record.** Every step has an actor and a chain hash. **Check every payment with PayPal now** re-reads each capture from PayPal.
-6. **Optional: correct an amount.** As Mother, lower the expense to $380.00. Father's share is now $228.00, so Mother sees **Return $24.00 to Father** and sends it back through the same sandbox checkout, verified with PayPal like any payment.
+5. **Record.** Every step has an actor and a chain hash. **Check every payment with PayPal now** re-reads each capture from PayPal. The home page shows this year's balance per parent, counting only payments PayPal confirmed.
+6. **Calendar (Bryntum).** Parenting time read from the agreement (§2.1). As Mother, **drag across days in Father's week** to ask for a swap; switch to Father and **Agree**. The swap appears on the calendar and in the record. It's an arrangement between the parents, not a change to the plan.
+7. **Optional: correct an amount.** As Mother, lower the expense to $380.00. Father's share is now $228.00, so Mother sees **Return $24.00 to Father** and sends it back through the same sandbox checkout, verified with PayPal like any payment.
 
 ## Sandbox demonstration: what the PayPal flow is, and what it isn't
 
@@ -120,7 +121,7 @@ The hosted demo's two parents are dedicated **PayPal sandbox** personal accounts
 ## Tests
 
 ```bash
-uv run pytest -q                                          # 170 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
+uv run pytest -q                                          # 183 tests: validator, engine, approvals, access, PayPal client and reconciliation (on recorded sandbox responses), routes, security headers, logging canary
 uv run python scripts/eval_extraction.py --runs 2         # AI extraction gate (Gemini or Anthropic key; add --workers 1 on a free plan): 3 agreements + 1 planted-instruction agreement
 uv run python scripts/e2e_sandbox.py --base-url http://127.0.0.1:8000   # golden path with a real sandbox approval
 uv run python scripts/verify.py --family <id>             # independent check of every payment against PayPal + the record chain
@@ -129,6 +130,9 @@ uv run python scripts/verify.py --family <id>             # independent check of
 ## Hosting (Render)
 
 `render.yaml` defines one web service and a Render Postgres database. **Free Render Postgres expires 30 days after creation** (`render.com/docs/free`). The hosted database expires on **12 Dec 2026**. Before that date, either upgrade the database or point `DATABASE_URL` at a new one. On start, the app re-creates the base demo family if it's missing; it never overwrites or deletes data.
+
+- **Kept awake:** `.github/workflows/keep-warm.yml` pings the demo every 10 minutes, so a judge's first click doesn't wait for a cold start. Remove it after judging.
+- **AI quota:** in demo mode, the AI's reading of an identical agreement is reused (table `ai_cache`), so repeated sample uploads don't spend the free Gemini quota. The reused reading still goes through the validator and both parents' approval.
 
 ## What came from Kitty
 
